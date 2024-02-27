@@ -88,7 +88,7 @@ const handleAppointment = (digit, pid, res) => {
   let did = "";
   db.select("*")
     .from("doctor")
-    .where({ isAvailable: "1", role: bookingField })
+    .where({ isavailable: "1", role: bookingField })
     .then((doctor) => {
       let vr = new VoiceResponse();
       if (!doctor.length) {
@@ -115,7 +115,7 @@ const handleAppointment = (digit, pid, res) => {
                 .where({ slot_no: slot_no, isBooked: 0 })
                 .then((slotArr) => {
                   db("doctor")
-                    .where({ isAvailable: 1 })
+                    .where({ isavailable: 1 })
                     .then((doc) => {
                       if (!slotArr.length || !doc.length) {
                         vr.say("Sorry, No slots available at this moment", {
@@ -147,7 +147,7 @@ const handleAppointment = (digit, pid, res) => {
                                   console.log("Success");
                                   db("doctor")
                                     .where({ did: did })
-                                    .update({ isAvailable: 0 })
+                                    .update({ isavailable: 0 })
                                     .then(() => {
                                       vr.say(
                                         `Your Booking for ${bookingField} is successful, appointment at ${dateTime(

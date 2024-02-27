@@ -94,7 +94,7 @@ const getDoctorWithRole = (req, res) => {
   const role = req.body.role;
   db.select("*")
     .from("doctor")
-    .where({ role: role, isAvailable: "1" })
+    .where({ role: role, isavailable: "1" })
     .then((doctor) => {
       res.status(200).send(doctor[0]); //return only one doctor
     })
@@ -107,7 +107,7 @@ const getDoctorWithRole = (req, res) => {
 const getAvailableDoctors = (req, res) => {
   db.select("*")
     .from("doctor")
-    .where({ isAvailable: "1" })
+    .where({ isavailable: "1" })
     .then((doctor) => {
       res.status(200).send(doctor);
     })
