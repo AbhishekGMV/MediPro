@@ -18,7 +18,7 @@ const getAvailableSlots = (req, res) => {
     .then((slotArr) => {
       let result = [];
       slotArr.map((slot) => {
-        if (slot.isBooked == 0) {
+        if (!slot.isBooked) {
           result.push(slot);
         }
       });
@@ -31,7 +31,7 @@ const bookSlot = (req, res) => {
   //get slot details for given slot number
   const { slotNo, pid, did } = req.body;
   db("slots")
-    .where({ slot_no: slotNo, isBooked: 0 })
+    .where({ slot_no: slotNo, isbooked: false })
     .then((slotArr) => {
       db("doctor")
         .where({ isavailable: 1 })
@@ -58,7 +58,7 @@ const bookSlot = (req, res) => {
                 .then(() => {
                   db("slots")
                     .where({ slot_no: slotNo })
-                    .update({ isBooked: 1 })
+                    .update({ isbooked: true })
                     .then(() => {
                       db("doctor")
                         .where({ did: did })
@@ -101,7 +101,7 @@ const unblockAllSlots = (req, res) => {
       }
     });
   db("slots")
-    .update({ isBooked: 0 })
+    .update({ isbooked: false })
     .then(() => {
       db("doctor")
         .update({ isavailable: 1 })
