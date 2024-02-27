@@ -95,16 +95,7 @@ const getDoctorWithRole = (req, res) => {
   db.select("*")
     .from("doctor")
     .where({ role: role, isavailable: true })
-    .then(async (doctor) => {
-      console.log({
-        role,
-        doctor,
-        query: await db
-          .select("*")
-          .from("doctor")
-          .where({ role: role, isavailable: true })
-          .toString(),
-      });
+    .then((doctor) => {
       res.status(200).send(doctor[0]); //return only one doctor
     })
     .catch((err) => {
