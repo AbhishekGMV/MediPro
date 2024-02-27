@@ -96,6 +96,7 @@ const getDoctorWithRole = (req, res) => {
     .from("doctor")
     .where({ role: role, isavailable: true })
     .then((doctor) => {
+      console.log(doctor);
       res.status(200).send(doctor[0]); //return only one doctor
     })
     .catch((err) => {
