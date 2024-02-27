@@ -34,7 +34,7 @@ const bookSlot = (req, res) => {
     .where({ slot_no: slotNo, isbooked: false })
     .then((slotArr) => {
       db("doctor")
-        .where({ isavailable: 1 })
+        .where({ isavailable: true })
         .then((doc) => {
           if (!slotArr.length || !doc.length) {
             res.status(400).send("Slot unavailable");
@@ -62,7 +62,7 @@ const bookSlot = (req, res) => {
                     .then(() => {
                       db("doctor")
                         .where({ did: did })
-                        .update({ isavailable: 0 })
+                        .update({ isavailable: false })
                         .then(() => {
                           res.status(200).send("Booking successful");
                         })
@@ -104,7 +104,7 @@ const unblockAllSlots = (req, res) => {
     .update({ isbooked: false })
     .then(() => {
       db("doctor")
-        .update({ isavailable: 1 })
+        .update({ isavailable: true })
         .then(() => {
           db("appointments")
             .del()

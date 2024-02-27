@@ -20,11 +20,11 @@ const cancelAppointment = (req, res) => {
     .then(() => {
       db("slots")
         .where({ slot_no: slotNo })
-        .update({ isBooked: 0 })
+        .update({ isbooked: false })
         .then(() => {
           db("doctor")
             .where({ did: did })
-            .update({ isavailable: 1 })
+            .update({ isavailable: true })
             .then(() => {
               res.status(200).send("Appointment cancelled!");
             })
