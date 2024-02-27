@@ -13,7 +13,7 @@ const appointmentRouter = require("./routes/appointment");
 const ivrRouter = require("./routes/ivr");
 
 const { logger } = require("./logger");
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5005;
 
 app.use(cors({ origin: "*" }));
 app.use(bodyParser.json({ limit: "50mb" }));

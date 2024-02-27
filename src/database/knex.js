@@ -1,5 +1,5 @@
 let config = {
-  client: "mysql",
+  client: "pg",
   connection: {
     connectionString: process.env.DB_CONNECTION_STRING,
     host: process.env.DB_HOST,
