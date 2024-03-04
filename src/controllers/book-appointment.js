@@ -18,7 +18,7 @@ const getAvailableSlots = (req, res) => {
     .then((slotArr) => {
       let result = [];
       slotArr.map((slot) => {
-        if (!slot.isBooked) {
+        if (!slot.isbooked) {
           result.push(slot);
         }
       });
