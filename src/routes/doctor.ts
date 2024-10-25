@@ -46,7 +46,6 @@ router.get(
 
 router.patch(
   "/:id",
-  auth,
   upload.single("signature"),
   (
     req: express.Request<
