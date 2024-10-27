@@ -5,8 +5,9 @@
 Medipro is designed to help doctors and patients easily generate, store, and access prescriptions effectively.
 
 ## Prerequisites
+
 - Supabase account
-  
+
 ## Setup
 
 Copy `.env.example` file to `.env` file and update the values

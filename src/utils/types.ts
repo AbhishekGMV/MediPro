@@ -1,5 +1,3 @@
-import { Slot } from "@prisma/client";
-
 export interface DoctorData {
   id: string;
   name: string;
@@ -13,4 +11,7 @@ export interface DoctorData {
   password: string;
 }
 
-export type CustomSlot = Omit<Slot, "id">;
+export interface BaseResponse {
+  status: number;
+  message: string;
+}

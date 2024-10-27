@@ -21,10 +21,10 @@ router.get(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.getDoctorsList(req, res);
-  }
+  },
 );
 
 router.get(
@@ -38,10 +38,10 @@ router.get(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.getDoctorWithID(req, res);
-  }
+  },
 );
 
 router.patch(
@@ -55,10 +55,10 @@ router.patch(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.handleSignatureFileUpload(req, res);
-  }
+  },
 );
 
 router.delete(
@@ -72,10 +72,10 @@ router.delete(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.deleteDoctorWithID(req, res);
-  }
+  },
 );
 
 router.post(
@@ -89,10 +89,10 @@ router.post(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.getDoctorWithRole(req, res);
-  }
+  },
 );
 
 router.post(
@@ -105,10 +105,10 @@ router.post(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.handleDoctorRegister(req, res);
-  }
+  },
 );
 
 router.post(
@@ -121,10 +121,10 @@ router.post(
       ParsedQs,
       Record<string, any>
     >,
-    res: express.Response<any, Record<string, any>>
+    res: express.Response<any, Record<string, any>>,
   ) => {
     void doctorController.handleDoctorLogin(req, res);
-  }
+  },
 );
 
 export default router;

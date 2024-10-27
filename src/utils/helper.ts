@@ -1,25 +1,29 @@
 export function generateSlots(
-  availabilityId: number,
+  availability: any[],
+  interval: number,
   doctorId: string,
-  startTime: Date,
-  endTime: Date,
-  interval: number = 60,
+  availabilityId: number
 ) {
   const slots = [];
-  let currentStartTime = new Date(startTime);
-  let currentEndTime = new Date(currentStartTime);
-  currentEndTime.setMinutes(currentEndTime.getMinutes() + interval);
-
-  while (currentEndTime <= endTime) {
-    slots.push({
-      availabilityId,
-      doctorId,
-      startTime: new Date(currentStartTime),
-      endTime: new Date(currentEndTime),
-    });
-
-    currentStartTime.setMinutes(currentStartTime.getMinutes() + interval);
+  for (let { startTime, endTime } of availability) {
+    startTime = new Date(startTime);
+    endTime = new Date(endTime);
+    let currentStartTime = new Date(startTime);
+    let currentEndTime = new Date(currentStartTime);
     currentEndTime.setMinutes(currentEndTime.getMinutes() + interval);
+
+    while (currentEndTime <= endTime) {
+      slots.push({
+        startTime: new Date(currentStartTime),
+        endTime: new Date(currentEndTime),
+        doctorId,
+        availabilityId,
+        isBooked: false,
+      });
+
+      currentStartTime.setMinutes(currentStartTime.getMinutes() + interval);
+      currentEndTime.setMinutes(currentEndTime.getMinutes() + interval);
+    }
   }
 
   return slots;

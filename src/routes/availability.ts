@@ -1,13 +1,13 @@
 import express from "express";
-import * as bookingController from "../controllers/slot";
+import * as bookingController from "../controllers/availability";
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  bookingController.getSlots(req, res);
+  bookingController.getAvailability(req, res);
 });
 
-router.post("/availability", (req, res) => {
-  bookingController.upsertAvailabilityAndSlots(req, res);
+router.post("/", (req, res) => {
+  bookingController.upsertAvailability(req, res);
 });
 
 // router.get("/available", (req, res) => {
