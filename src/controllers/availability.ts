@@ -7,13 +7,19 @@ import { AvailabilitySchema } from "../schemas/availability.schema";
 
 export const getAvailability = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<any> => {
   try {
     const doctorId = req.headers.id as string;
     const weekStart = req.query.weekStart as string;
     const availabilities = await prisma.availability.findMany({
       where: { doctorId, weekStart },
+      select: {
+        startTime: true,
+        endTime: true,
+        dayOfWeek: true,
+        id: true,
+      },
     });
     return res
       .status(200)
@@ -26,7 +32,7 @@ export const getAvailability = async (
 
 export const upsertAvailability = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<any> => {
   const result = AvailabilitySchema.safeParse(req);
   if (!result.success) {
@@ -51,7 +57,6 @@ export const upsertAvailability = async (
             update: {
               startTime,
               endTime,
-              dayOfWeek: (dayOfWeek as string).toUpperCase(),
             },
           });
           updatedAvailabilities.push(data);
@@ -72,7 +77,7 @@ export const upsertAvailability = async (
       },
       {
         timeout: 10000,
-      },
+      }
     );
     return res.status(200).json({
       status: Status.SUCCESS,

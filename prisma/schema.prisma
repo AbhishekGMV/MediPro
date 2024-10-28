@@ -50,7 +50,6 @@ model Availability {
   endTime   String
   weekStart String
   dayOfWeek String
-  slots     Slot[]
   doctor    Doctor   @relation(fields: [doctorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,13 +58,12 @@ model Availability {
 }
 
 model Slot {
-  id             Int            @id @default(autoincrement())
-  doctor         Doctor         @relation(fields: [doctorId], references: [id])
-  Availability   Availability[]
+  id             Int     @id @default(autoincrement())
+  doctor         Doctor  @relation(fields: [doctorId], references: [id])
   availabilityId Int
   startTime      String
   endTime        String
-  isBooked       Boolean        @default(false)
+  isBooked       Boolean @default(false)
   doctorId       String
 
   @@unique([availabilityId, startTime])
