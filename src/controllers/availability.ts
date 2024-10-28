@@ -1,18 +1,23 @@
 import { generateSlots } from "../utils/helper";
 import { Status } from "../utils/status";
 import { Request, Response } from "express-serve-static-core";
-import { ParsedQs } from "qs";
 import logger from "../utils/logger";
 import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
 
 export const getAvailability = async (
-  _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>
+  req: Request,
+  res: Response,
 ): Promise<any> => {
   try {
-    const slots = await prisma.slot.findMany();
-    return res.status(200).json({ status: Status.SUCCESS, data: slots });
+    const doctorId = req.headers.id as string;
+    const weekStart = req.query.weekStart as string;
+    const availabilities = await prisma.availability.findMany({
+      where: { doctorId, weekStart },
+    });
+    return res
+      .status(200)
+      .json({ status: Status.SUCCESS, data: availabilities });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ status: Status.ERROR, message: err });
@@ -21,34 +26,45 @@ export const getAvailability = async (
 
 export const upsertAvailability = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   const result = AvailabilitySchema.safeParse(req);
   if (!result.success) {
     return res.status(400).json(result);
   }
-  const { availability, interval } = req.body;
+  const { availabilities, interval, weekStart } = req.body;
   const doctorId = req.headers.id as string;
   try {
     const result = await prisma.$transaction(
       async (trx) => {
-        let existingAvailability = await prisma.availability.findFirst({
-          where: { doctorId },
-        });
-        if (!existingAvailability) {
-          existingAvailability = await prisma.availability.create({
-            data: { doctorId },
+        let updatedAvailabilities = [];
+        for (const availability of availabilities) {
+          const { startTime, endTime, dayOfWeek } = availability;
+          const data = await trx.availability.upsert({
+            where: {
+              doctorId_dayOfWeek: {
+                doctorId,
+                dayOfWeek,
+              },
+            },
+            create: { ...availability, doctorId, weekStart, dayOfWeek },
+            update: {
+              startTime,
+              endTime,
+              dayOfWeek: (dayOfWeek as string).toUpperCase(),
+            },
           });
+          updatedAvailabilities.push(data);
         }
-        let slots = generateSlots(
-          availability,
-          interval,
-          doctorId,
-          existingAvailability.id
-        );
+
+        // generate new slots and update
+        let slots = generateSlots(updatedAvailabilities, interval, doctorId);
 
         await trx.slot.deleteMany({
-          where: { doctorId, availabilityId: existingAvailability.id },
+          where: {
+            doctorId,
+            isBooked: false,
+          },
         });
         return await trx.slot.createMany({
           data: slots,
@@ -56,7 +72,7 @@ export const upsertAvailability = async (
       },
       {
         timeout: 10000,
-      }
+      },
     );
     return res.status(200).json({
       status: Status.SUCCESS,

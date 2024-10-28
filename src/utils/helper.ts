@@ -2,10 +2,9 @@ export function generateSlots(
   availability: any[],
   interval: number,
   doctorId: string,
-  availabilityId: number
 ) {
   const slots = [];
-  for (let { startTime, endTime } of availability) {
+  for (let { startTime, endTime, id } of availability) {
     startTime = new Date(startTime);
     endTime = new Date(endTime);
     let currentStartTime = new Date(startTime);
@@ -14,10 +13,10 @@ export function generateSlots(
 
     while (currentEndTime <= endTime) {
       slots.push({
-        startTime: new Date(currentStartTime),
-        endTime: new Date(currentEndTime),
+        startTime: currentStartTime.toISOString(),
+        endTime: currentEndTime.toISOString(),
         doctorId,
-        availabilityId,
+        availabilityId: id,
         isBooked: false,
       });
 

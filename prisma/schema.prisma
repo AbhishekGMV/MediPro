@@ -26,6 +26,7 @@ model Doctor {
   Slot         Slot[]
   Consultation Consultation[]
   Appointment  Appointment[]
+  Availability Availability[]
 }
 
 model Patient {
@@ -45,9 +46,16 @@ model Patient {
 model Availability {
   id        Int      @id @default(autoincrement())
   doctorId  String
+  startTime String
+  endTime   String
+  weekStart String
+  dayOfWeek String
   slots     Slot[]
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, dayOfWeek])
 }
 
 model Slot {
@@ -55,8 +63,8 @@ model Slot {
   doctor         Doctor         @relation(fields: [doctorId], references: [id])
   Availability   Availability[]
   availabilityId Int
-  startTime      DateTime
-  endTime        DateTime
+  startTime      String
+  endTime        String
   isBooked       Boolean        @default(false)
   doctorId       String
 
