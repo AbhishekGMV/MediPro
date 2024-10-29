@@ -66,7 +66,7 @@ export const upsertAvailability = async (
 
     return res.status(200).json({
       status: Status.SUCCESS,
-      message: "Availability updated successfully!",
+      message: "Availability updated successfully",
       data: result,
     });
   } catch (err) {
