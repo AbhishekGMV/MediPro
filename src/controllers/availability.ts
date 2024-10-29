@@ -1,9 +1,11 @@
-import { generateSlots } from "../utils/helper";
 import { Status } from "../utils/status";
 import { Request, Response } from "express-serve-static-core";
 import logger from "../utils/logger";
 import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
+import { Queue } from "bullmq";
+
+const queue = new Queue("Slot");
 
 export const getAvailability = async (
   req: Request,
@@ -40,45 +42,28 @@ export const upsertAvailability = async (
   }
   const { availabilities, interval, weekStart } = req.body;
   const doctorId = req.headers.id as string;
+
   try {
-    const result = await prisma.$transaction(
-      async (trx) => {
-        let updatedAvailabilities = [];
-        for (const availability of availabilities) {
-          const { startTime, endTime, dayOfWeek } = availability;
-          const data = await trx.availability.upsert({
-            where: {
-              doctorId_dayOfWeek: {
-                doctorId,
-                dayOfWeek,
-              },
-            },
-            create: { ...availability, doctorId, weekStart, dayOfWeek },
-            update: {
-              startTime,
-              endTime,
-            },
-          });
-          updatedAvailabilities.push(data);
-        }
-
-        // generate new slots and update
-        let slots = generateSlots(updatedAvailabilities, interval, doctorId);
-
-        await trx.slot.deleteMany({
+    const updatedAvailabilities = await prisma.$transaction(
+      availabilities.map((availability: any) =>
+        prisma.availability.upsert({
           where: {
-            doctorId,
-            isBooked: false,
+            doctorId_dayOfWeek: {
+              doctorId,
+              dayOfWeek: availability.dayOfWeek,
+            },
           },
-        });
-        return await trx.slot.createMany({
-          data: slots,
-        });
-      },
-      {
-        timeout: 10000,
-      }
+          create: { ...availability, doctorId, weekStart },
+          update: {
+            startTime: availability.startTime,
+            endTime: availability.endTime,
+          },
+        })
+      )
     );
+
+    queue.add("Slot", { updatedAvailabilities, interval, doctorId });
+
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Availability updated successfully!",
