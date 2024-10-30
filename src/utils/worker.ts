@@ -55,25 +55,32 @@ subscriberClient.subscribe("slot", (error) => {
 });
 
 subscriberClient.on("message", async (channel, data) => {
-  const json = JSON.parse(data);
-  logger.info({ message: "Generating slots..." });
-  let slots = generateSlots(
-    json.updatedAvailabilities,
-    json.interval,
-    json.doctorId
-  );
-  await prisma.$transaction(async (trx) => {
-    await trx.slot.deleteMany({
-      where: {
-        doctorId: json.doctorId,
-        isBooked: false,
-      },
+  try {
+    const json = JSON.parse(data);
+    logger.info({ message: "Generating slots..." });
+    let slots = generateSlots(
+      json.updatedAvailabilities,
+      json.interval,
+      json.doctorId
+    );
+    await prisma.$transaction(async (trx) => {
+      await trx.slot.deleteMany({
+        where: {
+          doctorId: json.doctorId,
+          isBooked: false,
+        },
+      });
+      await trx.slot.createMany({
+        data: slots,
+      });
+      logger.info({ message: "Slots generated successfully!" });
     });
-    await trx.slot.createMany({
-      data: slots,
+  } catch (err) {
+    logger.error({
+      message: "Error generating slots",
+      error: (err as Error).message,
     });
-    logger.info({ message: "Slots generated successfully!" });
-  });
+  }
 });
 
 export const publisherClient = new Redis(process.env.REDIS_HOST as string);
