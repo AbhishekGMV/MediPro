@@ -66,13 +66,13 @@ export const upsertAvailability = async (
         })
       )
     );
-
+    logger.info({ message: "Availability updated, queuing slot generation" });
     queue.add("Slot", { updatedAvailabilities, interval, doctorId });
 
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Availability updated successfully",
-      data: result,
+      data: updatedAvailabilities,
     });
   } catch (err) {
     logger.error({ message: (err as Error).message });
