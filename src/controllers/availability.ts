@@ -5,12 +5,16 @@ import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
+import { publisherClient } from "../utils/worker";
 
 const redis = new Redis(process.env.REDIS_HOST as string, {
   maxRetriesPerRequest: null,
 });
 
 const queue = new Queue("Slot", { connection: redis });
+queue.on("waiting", (data) => {
+  logger.warn({ message: `Waiting for ${data}` });
+});
 
 export const getAvailability = async (
   req: Request,
@@ -67,7 +71,11 @@ export const upsertAvailability = async (
       )
     );
     logger.info({ message: "Availability updated, queuing slot generation" });
-    queue.add("Slot", { updatedAvailabilities, interval, doctorId });
+    // queue.add("Slot", { updatedAvailabilities, interval, doctorId });
+    publisherClient.publish(
+      "slot",
+      JSON.stringify({ updatedAvailabilities, interval, doctorId })
+    );
 
     return res.status(200).json({
       status: Status.SUCCESS,
