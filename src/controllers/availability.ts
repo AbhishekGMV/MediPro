@@ -4,8 +4,13 @@ import logger from "../utils/logger";
 import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
 import { Queue } from "bullmq";
+import Redis from "ioredis";
 
-const queue = new Queue("Slot");
+const redis = new Redis(process.env.REDIS_HOST as string, {
+  maxRetriesPerRequest: null,
+});
+
+const queue = new Queue("Slot", { connection: redis });
 
 export const getAvailability = async (
   req: Request,
