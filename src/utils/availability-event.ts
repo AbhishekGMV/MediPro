@@ -133,7 +133,7 @@ class AvailabilityEvent extends EventEmitter {
         return;
       }
       this.retryCount++;
-      this.emit("error");
+      this.emit("error", data);
 
       logger.error({
         message: `Error generating slots, retrying(${this.retryCount})...`,
