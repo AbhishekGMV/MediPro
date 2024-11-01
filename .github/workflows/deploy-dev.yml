@@ -24,6 +24,10 @@ jobs:
 
             git pull origin main
 
+            npm install -g yarn
+
+            yarn global add pm2
+
             yarn
 
             yarn run build
