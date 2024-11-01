@@ -27,8 +27,6 @@
     "test": "vitest",
     "dev": "nodemon src/app.ts",
     "start": "yarn build && node dist/src/app.js",
-    "start:worker": "ts-node src/utils/worker.ts",
-    "start:pubsub": "ts-node src/utils/worker.ts",
     "build": "prisma generate && tsc -p .",
     "vercel-build": "prisma generate",
     "lint": "eslint . --ext .ts",
