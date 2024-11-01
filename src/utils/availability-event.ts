@@ -121,6 +121,7 @@ class AvailabilityEvent extends EventEmitter {
         await trx.slot.createMany({
           data: slots,
         });
+        this.retryCount = 0;
         logger.info({ message: "Slots generated successfully!" });
       });
     } catch (err) {
