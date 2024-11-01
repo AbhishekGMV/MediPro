@@ -91,10 +91,15 @@ import prisma from "../config/prisma";
 // export const publisherClient = new Redis(process.env.REDIS_HOST as string);
 
 class AvailabilityEvent extends EventEmitter {
+  retryCount: number;
+
   constructor() {
     super();
-    this.setMaxListeners(1);
+    this.retryCount = 0;
+    this.setMaxListeners(3);
     this.on("slot", this.updateAvailability);
+    // on error retry
+    this.on("error", this.updateAvailability);
   }
 
   async updateAvailability(data: any) {
@@ -119,8 +124,18 @@ class AvailabilityEvent extends EventEmitter {
         logger.info({ message: "Slots generated successfully!" });
       });
     } catch (err) {
+      if (this.retryCount === 3) {
+        logger.error({
+          message: "Failed to generate slots",
+          description: `${(err as Error).message}`,
+        });
+        return;
+      }
+      this.retryCount++;
+      this.emit("error");
+
       logger.error({
-        message: "Error generating slots",
+        message: `Error generating slots, retrying(${this.retryCount})...`,
         error: (err as Error).message,
       });
     }
