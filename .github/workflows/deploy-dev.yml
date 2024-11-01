@@ -13,30 +13,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Deploy to EC2
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > private_key && chmod 600 private_key
-
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            # Update package manager and install Node.js if needed
-            sudo apt-get update
-            if ! command -v node &> /dev/null; then
-              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-              export NVM_DIR="$HOME/.nvm" [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-              nvm install 22
-            fi
-            
-            npm install -g yarn
-            yarn global add typescript
-
-            # Navigate to app directory, pull changes, install dependencies, and restart the server
+      - name: SSH to EC2 and pull latest code, build and run the Docker container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navigate to the application directory
             cd /code/medipro
-            git pull origin main
-            yarn
-            
-            npx prisma generate
-            tsc -p .
 
-            # Start or restart the app with pm2 or another process manager
-            pm2 restart all
-          EOF
+            # Pull the latest code from the main branch
+            git pull origin main
+
+            yarn
+
+            yarn run build
+
+            pm2 stop medipro-server || true  # Stop the app if it's already running
+            pm2 start dist/src/app.js --name medipro-server  # Adjust the path to your compiled JS entry file
+            pm2 save  # Save the PM2 process list
