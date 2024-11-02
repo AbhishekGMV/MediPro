@@ -4,7 +4,7 @@ FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /build
 COPY package*.json .
 COPY .dockerignore .
-COPY .env .env
+# COPY .env .env
 COPY prisma prisma
 RUN yarn install
 COPY tsconfig.json .
