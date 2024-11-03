@@ -9,35 +9,41 @@ logger.info({ message: "Redis worker thread started" });
 const redis = new Redis(process.env.REDIS_HOST as string, {
   maxRetriesPerRequest: null,
 });
-const worker = new Worker(
-  SLOT_GEN_QUEUE,
-  async ({ data }: any) => {
-    logger.info({ message: "Generating slots..." });
-    let slots = generateSlots(
-      data.updatedAvailabilities,
-      data.interval,
-      data.doctorId
-    );
-    await prisma.$transaction(async (trx) => {
-      await trx.slot.deleteMany({
-        where: {
-          doctorId: data.doctorId,
-          isBooked: false,
-        },
+
+let worker: any;
+try {
+  worker = new Worker(
+    SLOT_GEN_QUEUE,
+    async ({ data }: any) => {
+      logger.info({ message: "Generating slots..." });
+      let slots = generateSlots(
+        data.updatedAvailabilities,
+        data.interval,
+        data.doctorId
+      );
+      await prisma.$transaction(async (trx) => {
+        await trx.slot.deleteMany({
+          where: {
+            doctorId: data.doctorId,
+            isBooked: false,
+          },
+        });
+        await trx.slot.createMany({
+          data: slots,
+        });
       });
-      await trx.slot.createMany({
-        data: slots,
-      });
-    });
-  },
-  { connection: redis }
-);
+    },
+    { connection: redis }
+  );
+} catch (err) {
+  logger.error({ message: "Error generating slots" });
+}
 
 worker.on("completed", async (data: any) => {
   logger.info({ message: "Slots generated successfully" });
 });
 
-worker.on("failed", (job: any, err) => {
+worker.on("failed", (job: any, err: Error) => {
   console.log(`${job.id} has failed with ${err.message}`);
 });
 
