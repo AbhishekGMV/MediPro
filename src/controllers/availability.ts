@@ -3,8 +3,7 @@ import { Request, Response } from "express-serve-static-core";
 import logger from "../utils/logger";
 import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
-import { queue } from "../utils/queue";
-import { SLOT_GEN_QUEUE } from "../utils/constants";
+import availabilityEvent from "../utils/availability-event";
 
 export const getAvailability = async (
   req: Request,
@@ -61,8 +60,11 @@ export const upsertAvailability = async (
       )
     );
     logger.info({ message: "Availability updated, queuing slot generation" });
-    queue.add(SLOT_GEN_QUEUE, { updatedAvailabilities, interval, doctorId });
-
+    availabilityEvent.emit("slot", {
+      updatedAvailabilities,
+      interval,
+      doctorId,
+    });
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Availability updated successfully",
