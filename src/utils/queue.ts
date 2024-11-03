@@ -41,7 +41,7 @@ try {
 }
 
 worker.on("completed", async (data: any) => {
-  logger.info({ message: "Slots generated successfully" });
+  logger.info({ message: `Slots generated successfully ${data.id}` });
 });
 
 worker.on("failed", (job: any, err: Error) => {

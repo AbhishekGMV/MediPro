@@ -19,7 +19,7 @@ app.use(express.json());
 app.use("/api", router);
 
 app.listen(port, () => {
-  logger.info(`Application started at port ${port}`);
+  logger.info(`Application running on port ${port}`);
 });
 
 export default app;
