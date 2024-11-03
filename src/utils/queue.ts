@@ -8,6 +8,7 @@ import { SLOT_GEN_QUEUE } from "./constants";
 logger.info({ message: "Redis worker thread started" });
 const redis = new Redis(process.env.REDIS_HOST as string, {
   maxRetriesPerRequest: null,
+  reconnectOnError: null,
 });
 
 let worker: any;
