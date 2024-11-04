@@ -6,7 +6,9 @@ export const doctorRegisterSchema = z.object({
     .any()
     .refine((file) => file !== undefined, `File is required`)
     .optional(),
-  body: userSchema,
+  body: userSchema.extend({
+    role: z.string(),
+  }),
 });
 
 export const doctorLoginSchema = z.object({

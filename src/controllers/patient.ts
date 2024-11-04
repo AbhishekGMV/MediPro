@@ -4,11 +4,21 @@ import { Status } from "../utils/status";
 import prisma from "../config/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import {
+  patientLoginSchema,
+  patientRegisterSchema,
+} from "../schemas/patient.schema";
 
 export const handlePatientRegister = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
+  const result = patientRegisterSchema.safeParse(req);
+  if (!result.success) {
+    return res
+      .status(400)
+      .json({ message: "Invalid request body", error: result });
+  }
   const patient = req.body.user;
 
   try {
@@ -35,7 +45,7 @@ export const handlePatientRegister = async (
 
 export const updatePatientRegister = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const { name, id, phone, gender, age } = req.body.user;
   const patient = {
@@ -64,8 +74,14 @@ export const updatePatientRegister = async (
 
 export const handlePatientLogin = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
+  const result = patientLoginSchema.safeParse(req.body);
+  if (!result.success) {
+    return res
+      .status(400)
+      .json({ message: "Invalid request body", error: result.error });
+  }
   const { phone, password } = req.body.user;
 
   try {
@@ -86,7 +102,7 @@ export const handlePatientLogin = async (
       process.env.JWT_SECRET as string,
       {
         expiresIn: "1h",
-      },
+      }
     );
     return res.status(200).json({
       status: Status.SUCCESS,
@@ -100,7 +116,7 @@ export const handlePatientLogin = async (
 
 export const getPatientsList = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   try {
     return res.json({
@@ -124,7 +140,7 @@ export const getPatientsList = async (
  */
 export const getPatientWithID = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
   try {

@@ -34,7 +34,7 @@ model Patient {
   name         String
   gender       String
   phone        String         @unique
-  imageUrl     String
+  imageUrl     String?
   age          Int
   password     String
   createdAt    DateTime       @default(now())
