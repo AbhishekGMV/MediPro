@@ -52,7 +52,7 @@ export const updatePatientRegister = async (
     name,
     phone,
     age,
-    gender,
+    gender: gender.toLowerCase(),
     id,
   };
   try {

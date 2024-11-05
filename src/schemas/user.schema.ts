@@ -8,8 +8,13 @@ export const userSchema = z.object({
     age: z.number(),
     gender: z
       .string()
-      .refine((gender: string) => ["M", "F"].includes(gender.toUpperCase()), {
-        message: "Invalid gender, allowed values [M, F]",
-      }),
+      .refine(
+        (gender: string) =>
+          ["male", "female", "others"].includes(gender.toLowerCase()),
+        {
+          message: "Invalid gender, required male, female or others",
+        }
+      )
+      .transform((gender) => gender.toLowerCase()),
   }),
 });
