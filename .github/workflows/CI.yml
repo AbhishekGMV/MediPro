@@ -6,6 +6,7 @@ on:
 
 jobs:
   login:
+    environment: docker
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
