@@ -32,7 +32,7 @@ router.post(
   upload.single("prescription"),
   (req: any, res: any) => {
     consultationController.handlePrescriptionFileUpload(req, res);
-  },
+  }
 );
 router.put("/prescription-content", (req: any, res: any) => {
   consultationController.updatePrescriptionContent(req, res);

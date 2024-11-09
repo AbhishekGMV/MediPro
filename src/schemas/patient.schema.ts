@@ -2,7 +2,9 @@ import { z } from "zod";
 import { userSchema } from "./user.schema";
 
 export const patientRegisterSchema = z.object({
-  body: userSchema,
+  body: z.object({
+    user: userSchema,
+  }),
 });
 
 export const patientLoginSchema = z.object({

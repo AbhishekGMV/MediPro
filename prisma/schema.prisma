@@ -16,6 +16,7 @@ datasource db {
 model Doctor {
   id           String         @id @default(uuid())
   name         String
+  gender       String
   phone        String         @unique
   imageUrl     String?
   signatureUrl String?
