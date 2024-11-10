@@ -12,7 +12,7 @@ export const userSchema = z.object({
         ["male", "female", "others"].includes(gender.toLowerCase()),
       {
         message: "Invalid gender, required male, female or others",
-      }
+      },
     )
     .transform((gender) => gender.toLowerCase()),
 });

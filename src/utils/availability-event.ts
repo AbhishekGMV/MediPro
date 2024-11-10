@@ -29,7 +29,7 @@ class AvailabilityEvent extends EventEmitter {
       let slots = generateSlots(
         json.updatedAvailabilities,
         json.interval,
-        json.doctorId
+        json.doctorId,
       );
       await prisma.$transaction(async (trx) => {
         await trx.slot.deleteMany({

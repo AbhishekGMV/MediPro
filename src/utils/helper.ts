@@ -1,7 +1,7 @@
 export function generateSlots(
   availability: any[],
   interval: number,
-  doctorId: string
+  doctorId: string,
 ) {
   const slots = [];
   for (let { startTime, endTime, id, dayOfWeek } of availability) {

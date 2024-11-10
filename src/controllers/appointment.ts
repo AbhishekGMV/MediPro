@@ -5,7 +5,7 @@ import { ParsedQs } from "qs";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>
+  res: Response<any, Record<string, any>, number>,
 ): Promise<any> => {
   try {
     return res.json({
@@ -22,7 +22,7 @@ export const getAppointmentList = async (
 
 export const createAppointment = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>
+  res: Response<any, Record<string, any>, number>,
 ): Promise<any> => {
   const { patientId, doctorId, slotId } = req.body;
 
@@ -208,7 +208,7 @@ export const createAppointment = async (
 
 export const getDoctorAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>
+  res: Response<any, Record<string, any>, number>,
 ): Promise<any> => {
   const id = req.params.id;
   try {
@@ -229,7 +229,7 @@ export const getDoctorAppointmentList = async (
 
 export const getPatientAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>
+  res: Response<any, Record<string, any>, number>,
 ): Promise<any> => {
   const id = req.params.id;
   try {

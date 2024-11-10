@@ -12,7 +12,7 @@ import { getFormattedSpeechData } from "../utils/helper";
 
 export const getConsultationList = async (
   req: any,
-  res: any
+  res: any,
 ): Promise<void> => {
   try {
     const data = await prisma.consultation.findMany();
@@ -30,7 +30,7 @@ export const getConsultationList = async (
 
 export const getConsultationWithID = async (
   req: { params: { id: any } },
-  res: any
+  res: any,
 ): Promise<void> => {
   const id = req.params.id;
   try {
@@ -49,7 +49,7 @@ export const getConsultationWithID = async (
 
 export const getPatientConsultation = async (
   req: { params: { id: any } },
-  res: any
+  res: any,
 ): Promise<void> => {
   const id = req.params.id;
 
@@ -79,7 +79,7 @@ export const getPatientConsultation = async (
 
 export const getDoctorConsultation = async (
   req: { params: { id: any } },
-  res: any
+  res: any,
 ): Promise<void> => {
   const id = req.params.id;
 
@@ -108,7 +108,7 @@ export const getDoctorConsultation = async (
 
 export const createConsultationMetaData = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   const doctorId = req.headers.id as string;
   const result = consultationMetaDataSchema.safeParse(req.body);
@@ -170,7 +170,7 @@ export const createConsultationMetaData = async (
 
 export const handlePrescriptionFileUpload = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   const result = prescriptionSchema.safeParse(req);
   if (!result.success) {
@@ -221,7 +221,7 @@ export const handlePrescriptionFileUpload = async (
 
 export const updatePrescriptionContent = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   const result = consultationSchema.safeParse(req.body);
   const { id, prescription } = req.body.payload;
@@ -252,7 +252,7 @@ export const updatePrescriptionContent = async (
 
 export const completeConsultation = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   try {
     const data = await prisma.$transaction(
@@ -279,7 +279,7 @@ export const completeConsultation = async (
       },
       {
         timeout: 10000, // 10 seconds
-      }
+      },
     );
     res.json({
       success: true,

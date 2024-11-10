@@ -7,7 +7,7 @@ import availabilityEvent from "../utils/availability-event";
 
 export const getAvailability = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   try {
     const doctorId = req.headers.id as string;
@@ -32,7 +32,7 @@ export const getAvailability = async (
 
 export const getAvailableSlotsForDay = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   try {
     const { id: doctorId, dayOfWeek } = req.query;
@@ -56,7 +56,7 @@ export const getAvailableSlotsForDay = async (
 
 export const upsertAvailability = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   const result = AvailabilitySchema.safeParse(req);
   if (!result.success) {
@@ -80,8 +80,8 @@ export const upsertAvailability = async (
             startTime: availability.startTime,
             endTime: availability.endTime,
           },
-        })
-      )
+        }),
+      ),
     );
     logger.info({ message: "Availability updated, queuing slot generation" });
     availabilityEvent.emit("slot", {
