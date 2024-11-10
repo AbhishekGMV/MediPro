@@ -64,6 +64,7 @@ model Slot {
   availabilityId Int
   startTime      String
   endTime        String
+  dayOfWeek      String
   isBooked       Boolean @default(false)
   doctorId       String
 

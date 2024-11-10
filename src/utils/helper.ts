@@ -1,10 +1,10 @@
 export function generateSlots(
   availability: any[],
   interval: number,
-  doctorId: string,
+  doctorId: string
 ) {
   const slots = [];
-  for (let { startTime, endTime, id } of availability) {
+  for (let { startTime, endTime, id, dayOfWeek } of availability) {
     startTime = new Date(startTime);
     endTime = new Date(endTime);
     let currentStartTime = new Date(startTime);
@@ -16,6 +16,7 @@ export function generateSlots(
         startTime: currentStartTime.toISOString(),
         endTime: currentEndTime.toISOString(),
         doctorId,
+        dayOfWeek,
         availabilityId: id,
         isBooked: false,
       });

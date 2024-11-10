@@ -30,6 +30,30 @@ export const getAvailability = async (
   }
 };
 
+export const getAvailableSlotsForDay = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { id: doctorId, dayOfWeek } = req.query;
+    const availabilities = await prisma.slot.findMany({
+      where: { doctorId: doctorId as string, dayOfWeek: dayOfWeek as string },
+      select: {
+        dayOfWeek: true,
+        startTime: true,
+        endTime: true,
+        id: true,
+      },
+    });
+    return res
+      .status(200)
+      .json({ status: Status.SUCCESS, data: availabilities });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
 export const upsertAvailability = async (
   req: Request,
   res: Response
