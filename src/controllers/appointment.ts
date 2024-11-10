@@ -5,7 +5,7 @@ import { ParsedQs } from "qs";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   try {
     return res.json({
@@ -22,7 +22,7 @@ export const getAppointmentList = async (
 
 export const createAppointment = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const { patientId, doctorId, slotId } = req.body;
 
@@ -208,7 +208,7 @@ export const createAppointment = async (
 
 export const getDoctorAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
   try {
@@ -218,6 +218,37 @@ export const getDoctorAppointmentList = async (
       },
       include: {
         patient: true,
+      },
+    });
+    return res.status(200).json({ status: Status.SUCCESS, data: appointments });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const getPatientAppointmentList = async (
+  req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
+  res: Response<any, Record<string, any>, number>
+): Promise<any> => {
+  const id = req.params.id;
+  try {
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        patientId: id,
+      },
+      include: {
+        doctor: {
+          select: { name: true, role: true },
+        },
+        slot: {
+          select: {
+            startTime: true,
+            isBooked: true,
+            id: true,
+            dayOfWeek: true,
+          },
+        },
       },
     });
     return res.status(200).json({ status: Status.SUCCESS, data: appointments });
