@@ -1,3 +1,4 @@
+import moment from "moment";
 import prisma from "../config/prisma";
 import { Status } from "../utils/status";
 import { Request, Response } from "express-serve-static-core";
@@ -5,7 +6,7 @@ import { ParsedQs } from "qs";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   try {
     return res.json({
@@ -22,7 +23,7 @@ export const getAppointmentList = async (
 
 export const createAppointment = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const { patientId, doctorId, slotId } = req.body;
 
@@ -208,16 +209,46 @@ export const createAppointment = async (
 
 export const getDoctorAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
+  const { date } = req.query;
+  const filters: {
+    doctorId: string;
+    slot?: {
+      startTime: {
+        gte: Date;
+        lt: Date;
+      };
+    };
+  } = { doctorId: id, slot: undefined };
+
+  if (date) {
+    const startDate = new Date(date as string);
+    const endDate = new Date(date as string);
+    endDate.setDate(endDate.getDate() + 1);
+    filters.slot = {
+      startTime: {
+        gte: startDate,
+        lt: endDate,
+      },
+    };
+  }
+
   try {
     const appointments = await prisma.appointment.findMany({
-      where: {
-        doctorId: id,
-      },
+      where: filters,
       include: {
-        patient: true,
+        patient: {
+          select: {
+            name: true,
+            age: true,
+            gender: true,
+            phone: true,
+            imageUrl: true,
+          },
+        },
+        slot: true,
       },
     });
     return res.status(200).json({ status: Status.SUCCESS, data: appointments });
@@ -229,7 +260,7 @@ export const getDoctorAppointmentList = async (
 
 export const getPatientAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
   try {

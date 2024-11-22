@@ -62,8 +62,8 @@ model Slot {
   id             Int           @id @default(autoincrement())
   doctor         Doctor        @relation(fields: [doctorId], references: [id])
   availabilityId Int
-  startTime      String
-  endTime        String
+  startTime      DateTime
+  endTime        DateTime
   dayOfWeek      String
   isBooked       Boolean       @default(false)
   doctorId       String
