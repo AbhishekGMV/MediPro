@@ -69,7 +69,6 @@ model Slot {
   doctorId       String
   Appointment    Appointment[]
 
-  @@unique([availabilityId, startTime])
   @@index([doctorId])
 }
 

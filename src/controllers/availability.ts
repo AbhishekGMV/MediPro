@@ -4,10 +4,11 @@ import logger from "../utils/logger";
 import prisma from "../config/prisma";
 import { AvailabilitySchema } from "../schemas/availability.schema";
 import availabilityEvent from "../utils/availability-event";
+import moment from "moment";
 
 export const getAvailability = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<any> => {
   try {
     const doctorId = req.headers.id as string;
@@ -32,7 +33,7 @@ export const getAvailability = async (
 
 export const getAvailableSlotsForDay = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<any> => {
   try {
     const { id: doctorId, dayOfWeek } = req.query;
@@ -56,15 +57,15 @@ export const getAvailableSlotsForDay = async (
 
 export const upsertAvailability = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<any> => {
   const result = AvailabilitySchema.safeParse(req);
   if (!result.success) {
     return res.status(400).json(result);
   }
-  const { availabilities, interval, weekStart } = req.body;
+  const { availabilities, interval } = req.body;
   const doctorId = req.headers.id as string;
-
+  const weekStart = moment().startOf("isoWeek").format("YYYY-MM-DD");
   try {
     const updatedAvailabilities = await prisma.$transaction(
       availabilities.map((availability: any) =>
@@ -80,8 +81,8 @@ export const upsertAvailability = async (
             startTime: availability.startTime,
             endTime: availability.endTime,
           },
-        }),
-      ),
+        })
+      )
     );
     logger.info({ message: "Availability updated, queuing slot generation" });
     availabilityEvent.emit("slot", {
@@ -92,7 +93,7 @@ export const upsertAvailability = async (
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Availability updated successfully",
-      data: updatedAvailabilities,
+      data: { updatedAvailabilities },
     });
   } catch (err) {
     logger.error({ message: (err as Error).message });
