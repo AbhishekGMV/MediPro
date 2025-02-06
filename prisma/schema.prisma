@@ -59,15 +59,14 @@ model Availability {
 }
 
 model Slot {
-  id             Int           @id @default(autoincrement())
-  doctor         Doctor        @relation(fields: [doctorId], references: [id])
+  id             Int     @id @default(autoincrement())
+  doctor         Doctor  @relation(fields: [doctorId], references: [id])
   availabilityId Int
   startTime      DateTime
   endTime        DateTime
   dayOfWeek      String
-  isBooked       Boolean       @default(false)
+  isBooked       Boolean @default(false)
   doctorId       String
-  Appointment    Appointment[]
 
   @@unique([availabilityId, startTime])
   @@index([doctorId])
@@ -78,7 +77,6 @@ model Appointment {
   doctor       Doctor         @relation(fields: [doctorId], references: [id])
   patient      Patient        @relation(fields: [patientId], references: [id])
   consultation Consultation[]
-  slot         Slot           @relation(fields: [slotId], references: [id])
   patientId    String
   doctorId     String
   slotId       Int

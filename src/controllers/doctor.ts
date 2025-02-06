@@ -20,17 +20,7 @@ export const getDoctorsList = async (
   try {
     return res.json({
       status: Status.SUCCESS,
-      data: await prisma.doctor.findMany({
-        select: {
-          gender: true,
-          name: true,
-          imageUrl: true,
-          phone: true,
-          role: true,
-          signatureUrl: true,
-          id: true,
-        },
-      }),
+      data: await prisma.doctor.findMany(),
     });
   } catch (error) {
     logger.error({ message: "Failed to fetch doctors list", error });

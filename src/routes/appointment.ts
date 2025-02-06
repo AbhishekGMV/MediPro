@@ -18,10 +18,6 @@ router.get("/doctor/:id", (req, res) => {
   appointmentController.getDoctorAppointmentList(req, res);
 });
 
-router.get("/patient/:id", (req, res) => {
-  appointmentController.getPatientAppointmentList(req, res);
-});
-
 router.post("/book", (req, res) => {
   appointmentController.createAppointment(req, res);
 });
