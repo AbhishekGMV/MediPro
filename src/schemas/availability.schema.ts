@@ -16,7 +16,7 @@ export const SlotSchema = z.object({
           "SATURDAY",
           "SUNDAY",
         ].includes(day.toUpperCase()),
-      { message: "Invalid day of week" }
+      { message: "Invalid day of week" },
     ),
 });
 
@@ -29,7 +29,7 @@ export const AvailabilitySchema = z.object({
       arr.map((val) => ({
         startTime: new Date(val.startTime),
         endTime: new Date(val.endTime),
-      }))
+      })),
     ),
     interval: z
       .number()
@@ -38,5 +38,6 @@ export const AvailabilitySchema = z.object({
       .refine((value) => [15, 30].includes(value), {
         message: "Interval must be either 15 or 30 minutes",
       }),
+    weekStart: z.string(),
   }),
 });
