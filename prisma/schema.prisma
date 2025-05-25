@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   engineType    = "binary"
@@ -8,13 +5,13 @@ generator client {
 }
 
 datasource db {
-  provider     = "postgres"
+  provider     = "mongodb"
   url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
 model Doctor {
-  id           String         @id @default(uuid())
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   gender       String
   phone        String         @unique
@@ -31,7 +28,7 @@ model Doctor {
 }
 
 model Patient {
-  id           String         @id @default(uuid())
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   gender       String
   phone        String         @unique
@@ -45,7 +42,7 @@ model Patient {
 }
 
 model Availability {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   doctorId  String
   startTime String
   endTime   String
@@ -54,56 +51,51 @@ model Availability {
   doctor    Doctor   @relation(fields: [doctorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Slot      Slot[]
 
   @@unique([doctorId, dayOfWeek])
 }
 
 model Slot {
-  id             Int     @id @default(autoincrement())
-  doctor         Doctor  @relation(fields: [doctorId], references: [id])
-  availabilityId Int
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId       String
+  availabilityId String
   startTime      DateTime
   endTime        DateTime
   dayOfWeek      String
-  isBooked       Boolean @default(false)
-  doctorId       String
+  isBooked       Boolean      @default(false)
+  doctor         Doctor       @relation(fields: [doctorId], references: [id])
+  availability   Availability @relation(fields: [availabilityId], references: [id])
 
   @@unique([availabilityId, startTime])
-  @@index([doctorId])
 }
 
 model Appointment {
-  id           String         @id @default(uuid())
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId     String
+  patientId    String
+  slotId       String
+  status       String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   doctor       Doctor         @relation(fields: [doctorId], references: [id])
   patient      Patient        @relation(fields: [patientId], references: [id])
   consultation Consultation[]
-  patientId    String
-  doctorId     String
-  slotId       Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  status       String
-
-  @@index([patientId])
-  @@index([doctorId])
-  @@index([slotId])
 }
 
 model Consultation {
-  id                  String      @id @default(uuid())
-  doctor              Doctor      @relation(fields: [doctorId], references: [id])
-  patient             Patient     @relation(fields: [patientId], references: [id])
-  appointment         Appointment @relation(fields: [appointmentId], references: [id])
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   doctorId            String
   patientId           String
   appointmentId       String
   prescriptionUrl     String?
   prescriptionContent String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@unique([doctorId, appointmentId])
-  @@index([doctorId])
-  @@index([patientId])
-  @@index([appointmentId])
 }

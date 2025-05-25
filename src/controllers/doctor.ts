@@ -1,6 +1,5 @@
 import prisma from "../config/prisma";
 import { type Request, type Response } from "express";
-import { randomUUID } from "crypto";
 import { Status } from "../utils/status";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -15,7 +14,7 @@ import { INTERACTION_ID } from "../utils/constants";
 
 export const getDoctorsList = async (
   _req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response> => {
   try {
     return res.json({
@@ -40,7 +39,7 @@ export const getDoctorsList = async (
 
 export const getDoctorWithID = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response> => {
   const id = req.params.id;
   try {
@@ -62,7 +61,7 @@ export const getDoctorWithID = async (
  */
 export const handleDoctorLogin = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response<void>> => {
   const result = doctorLoginSchema.safeParse(req.body);
   if (!result.success) {
@@ -92,22 +91,28 @@ export const handleDoctorLogin = async (
       process.env.JWT_SECRET as string,
       {
         expiresIn: "1h",
-      },
+      }
     );
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Login successful",
       data: { token, id: doctor.id, name: doctor.name },
     });
-  } catch (err) {
-    console.log(err);
+  } catch (err: any) {
+    logger.error({
+      message: "login failed",
+      interactionId: req.headers[INTERACTION_ID],
+      error: err.name,
+      description: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ status: Status.ERROR, message: err });
   }
 };
 
 export const handleDoctorRegister = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response<void>> => {
   const result = doctorRegisterSchema.safeParse(req);
   const { user } = req.body;
@@ -132,7 +137,6 @@ export const handleDoctorRegister = async (
         .json({ status: Status.FAILED, message: "User already exists" });
     }
     user.password = await bcrypt.hash(user.password, 10);
-    user.id = randomUUID();
     const response = await prisma.doctor.create({ data: user });
     logger.info({
       message: "Doctor registered successfully",
@@ -158,7 +162,7 @@ export const handleDoctorRegister = async (
 
 export const handleSignatureFileUpload = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response<void>> => {
   try {
     const schemaValidation = doctorSignatureFileUpdateSchema.safeParse(req);
@@ -206,7 +210,7 @@ export const handleSignatureFileUpload = async (
 
 export const getDoctorWithRole = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response<void>> => {
   const role: string = req.body.role;
   if (!role) {
@@ -222,7 +226,7 @@ export const getDoctorWithRole = async (
 
 export const deleteDoctorWithID = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<Response<void>> => {
   const id = req.params.id;
   const doctor = await prisma.doctor.findUnique({
@@ -243,7 +247,7 @@ export const deleteDoctorWithID = async (
     }
   }
   //using raw query to delete as there is a bug in prisma delete on cascade
-  const data = await prisma.$queryRaw`DELETE FROM "Doctor" WHERE id = ${id}`;
+  const data = await prisma.doctor.delete({ where: { id } });
   return res.json({
     status: "Success",
     message: "Doctor deleted successfully",
@@ -253,7 +257,7 @@ export const deleteDoctorWithID = async (
 
 const uploadSignatureFile = async (
   file: Express.Multer.File | undefined,
-  user: any,
+  user: any
 ) => {
   if (file === undefined) {
     throw new Error("Invalid file");
