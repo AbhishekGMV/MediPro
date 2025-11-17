@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Doctor {
-  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   gender       String
   phone        String         @unique
@@ -57,15 +57,16 @@ model Availability {
 }
 
 model Slot {
-  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
   doctorId       String
   availabilityId String
   startTime      DateTime
   endTime        DateTime
   dayOfWeek      String
-  isBooked       Boolean      @default(false)
-  doctor         Doctor       @relation(fields: [doctorId], references: [id])
-  availability   Availability @relation(fields: [availabilityId], references: [id])
+  isBooked       Boolean       @default(false)
+  doctor         Doctor        @relation(fields: [doctorId], references: [id])
+  availability   Availability  @relation(fields: [availabilityId], references: [id])
+  Appointment    Appointment[]
 
   @@unique([availabilityId, startTime])
 }
@@ -80,6 +81,7 @@ model Appointment {
   updatedAt    DateTime       @updatedAt
   doctor       Doctor         @relation(fields: [doctorId], references: [id])
   patient      Patient        @relation(fields: [patientId], references: [id])
+  slot         Slot           @relation(fields: [slotId], references: [id])
   consultation Consultation[]
 }
 
