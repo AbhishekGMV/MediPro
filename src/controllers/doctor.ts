@@ -9,8 +9,20 @@ import {
   doctorSignatureFileUpdateSchema,
 } from "../schemas/doctor.schema";
 import supabase from "../config/supabase";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import logger from "../utils/logger";
 import { INTERACTION_ID } from "../utils/constants";
+
+const config = {
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
+  },
+  endpoint: process.env.R2_ENDPOINT as string,
+  region: "auto",
+};
+
+const client = new S3Client(config);
 
 export const getDoctorsList = async (
   _req: Request,
@@ -186,7 +198,11 @@ export const handleSignatureFileUpload = async (
     await uploadSignatureFile(req.file, doctor);
     const result = await prisma.doctor.update({
       where: { id: doctor.id },
-      data: doctor,
+      data: { signatureUrl: doctor.signatureUrl },
+      select: {
+        id: true,
+        signatureUrl: true,
+      },
     });
     logger.info({ message: "Doctor data update successful" });
     return res.status(200).json({
@@ -262,18 +278,17 @@ const uploadSignatureFile = async (
   if (file === undefined) {
     throw new Error("Invalid file");
   }
-  const filename = `${user.id}/signature`;
-  const bucket = process.env.SUPABASE_SIGNATURES_BUCKET as string;
-
-  const { error } = await supabase.storage
-    .from(bucket)
-    .upload(filename, file.buffer, {
-      contentType: "image/png",
-      upsert: true,
-    });
-  if (error) {
-    throw new Error(error.message);
+  const filename = `${user.id}_signature.png`;
+  const bucket = process.env.R2_BUCKET as string;
+  const input = {
+    Body: file.buffer,
+    Bucket: bucket,
+    Key: filename,
+  };
+  const command = new PutObjectCommand(input);
+  const response = await client.send(command);
+  if (response.$metadata.httpStatusCode !== 200) {
+    throw new Error("Failed to upload file to R2");
   }
-  const { data } = supabase.storage.from(bucket).getPublicUrl(filename);
-  user.signatureUrl = data.publicUrl;
+  user.singnatureUrl = `${process.env.R2_PUBLIC_ENDPOINT}/${filename}`;
 };
