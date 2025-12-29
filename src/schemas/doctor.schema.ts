@@ -8,7 +8,7 @@ export const doctorRegisterSchema = z.object({
     .optional(),
   body: z.object({
     user: userSchema.extend({
-      role: z.string(),
+      specialization: z.string(),
     }),
   }),
 });
@@ -24,5 +24,11 @@ export const doctorSignatureFileUpdateSchema = z.object({
   file: z.any().refine((file) => file !== undefined, `File is required`),
   params: z.object({
     id: z.string(),
+  }),
+});
+
+export const DoctorLeaveSchema = z.object({
+  body: z.object({
+    date: z.string().date(),
   }),
 });

@@ -4,14 +4,21 @@ import { Status } from "../utils/status";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
+  DoctorLeaveSchema,
   doctorLoginSchema,
   doctorRegisterSchema,
   doctorSignatureFileUpdateSchema,
 } from "../schemas/doctor.schema";
-import supabase from "../config/supabase";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import logger from "../utils/logger";
 import { INTERACTION_ID } from "../utils/constants";
+import moment from "moment";
+import { generateSlots, overlaps, timeParts } from "../utils/helper";
+import { time } from "console";
 
 const config = {
   credentials: {
@@ -54,15 +61,12 @@ export const getDoctorWithID = async (
   res: Response
 ): Promise<Response> => {
   const id = req.params.id;
-  try {
-    const doctor = await prisma.doctor.findUnique({ where: { id } });
-    return res.json({
-      status: Status.SUCCESS,
-      data: { ...doctor, password: undefined },
-    });
-  } catch (err) {
-    return res.json({ status: Status.ERROR, message: err });
-  }
+
+  const doctor = await prisma.doctor.findUnique({ where: { id } });
+  return res.json({
+    status: Status.SUCCESS,
+    data: { ...doctor, password: undefined },
+  });
 };
 
 /**
@@ -142,14 +146,21 @@ export const handleDoctorRegister = async (
     if (doctor) {
       logger.warn({
         message: "User already exists",
-        interactionId: req.headers[INTERACTION_ID],
       });
       return res
         .status(400)
         .json({ status: Status.FAILED, message: "User already exists" });
     }
     user.password = await bcrypt.hash(user.password, 10);
-    const response = await prisma.doctor.create({ data: user });
+    const response = await prisma.doctor.create({
+      data: user,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        specialization: true,
+      },
+    });
     logger.info({
       message: "Doctor registered successfully",
     });
@@ -234,7 +245,9 @@ export const getDoctorWithRole = async (
       .status(400)
       .json({ status: Status.FAILED, message: "Role is required" });
   }
-  const doctor = await prisma.doctor.findFirst({ where: { role } });
+  const doctor = await prisma.doctor.findFirst({
+    where: { specialization: role },
+  });
   return res
     .status(200)
     .json({ status: Status.SUCCESS, data: { ...doctor, password: undefined } });
@@ -254,12 +267,17 @@ export const deleteDoctorWithID = async (
       .json({ status: "Not found", message: "No doctor found for given id" });
   }
   if (doctor.signatureUrl) {
-    const { error } = await supabase.storage
-      .from("medipro-signatures")
-      .remove([`${doctor.id}/signature.png`]);
-
-    if (error) {
-      throw new Error(error.message);
+    const response = await client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET as string,
+        Key: `${doctor.id}_signature.png`,
+      })
+    );
+    if (response.$metadata.httpStatusCode !== 204) {
+      logger.warn({
+        message: "Failed to delete signature file from R2",
+        doctorId: doctor.id,
+      });
     }
   }
   //using raw query to delete as there is a bug in prisma delete on cascade
@@ -269,6 +287,143 @@ export const deleteDoctorWithID = async (
     message: "Doctor deleted successfully",
     id,
   });
+};
+
+export const addDoctorLeave = async (
+  req: Request,
+  res: Response
+): Promise<Response<void>> => {
+  const doctorId = req.params.id;
+  const { date } = req.body;
+
+  const result = DoctorLeaveSchema.safeParse(req);
+  if (!result.success) {
+    logger.error({ error: result.error });
+    return res
+      .status(400)
+      .json({ status: Status.FAILED, message: result.error });
+  }
+
+  try {
+    await prisma.doctorLeave.create({
+      data: {
+        doctorId,
+        date: new Date(date),
+      },
+    });
+
+    logger.info({ message: "Leave added successfully" });
+    return res
+      .status(200)
+      .json({ status: Status.SUCCESS, message: "Leave added successfully" });
+  } catch (err) {
+    logger.error({ message: "Failed to update leave", error: err });
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const getAvailableSlots = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { date } = req.query;
+    const doctorId = req.params.id;
+
+    const availability = await prisma.availability.findFirst({
+      where: {
+        doctorId: doctorId as string,
+        dayOfWeek: moment(date as string).day(),
+        effectiveTo: null,
+      },
+      select: {
+        dayOfWeek: true,
+        startTime: true,
+        endTime: true,
+        slotDuration: true,
+      },
+    });
+
+    if (availability === null) {
+      return res.status(200).json({ status: Status.SUCCESS, data: [] });
+    }
+
+    let dayStart = new Date(`${date}T00:00:00.000Z`);
+    let dayEnd = new Date(`${date}T00:00:00.000Z`);
+    dayStart.setUTCHours(
+      timeParts(availability.startTime).hours,
+      timeParts(availability.startTime).minutes,
+      0,
+      0
+    );
+    dayEnd.setUTCHours(
+      timeParts(availability.endTime).hours,
+      timeParts(availability.endTime).minutes,
+      0,
+      0
+    );
+
+    const leaves = await prisma.doctorLeave.findFirst({
+      where: {
+        doctorId: doctorId as string,
+        date: new Date(moment(date as string).format("YYYY-MM-DD")),
+      },
+    });
+
+    if (leaves != null) {
+      return res.status(200).json({ status: Status.SUCCESS, data: [] });
+    }
+
+    const { slotDuration } = availability;
+    const slots = generateSlots(
+      { startTime: dayStart, endTime: dayEnd },
+      slotDuration
+    );
+
+    const bookedSlots = await prisma.appointment.findMany({
+      where: {
+        doctorId: doctorId as string,
+        startTime: {
+          lt: dayEnd,
+        },
+        endTime: {
+          gt: dayStart,
+        },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    const availableSlots = slots.filter((slot) => {
+      return !bookedSlots.some((bookedSlot) =>
+        overlaps(
+          slot.startTime,
+          slot.endTime,
+          bookedSlot.startTime,
+          bookedSlot.endTime
+        )
+      );
+    });
+
+    return res.status(200).json({
+      status: Status.SUCCESS,
+      data: {
+        doctorId,
+        date,
+        dayOfWeek: moment(date as string).day(),
+        slots: availableSlots,
+      },
+    });
+  } catch (err) {
+    logger.error({ message: "Failed to get slots", error: err });
+    return res.status(500).json({
+      status: Status.ERROR,
+      message: "Failed to get slots",
+      error: err,
+    });
+  }
 };
 
 const uploadSignatureFile = async (

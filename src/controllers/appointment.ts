@@ -3,6 +3,9 @@ import prisma from "../config/prisma";
 import { Status } from "../utils/status";
 import { Request, Response } from "express-serve-static-core";
 import { ParsedQs } from "qs";
+import { AppointmentSchema } from "../schemas/appointment.schema";
+import { isSlotWithinAvailability } from "../utils/helper";
+import logger from "../utils/logger";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
@@ -25,76 +28,116 @@ export const createAppointment = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
   res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
-  const { patientId, doctorId, slotId } = req.body;
+  const patientId = (req as any).user.id as string;
+  const result = AppointmentSchema.safeParse(req);
+  if (!result.success) {
+    return res
+      .status(400)
+      .json({ status: Status.FAILED, message: result.error.errors });
+  }
+  let { doctorId, startTime, endTime } = req.body;
+  startTime = new Date(startTime);
+  endTime = new Date(endTime);
+  const dayOfWeek = startTime.getUTCDay();
+
+  if (startTime >= endTime) {
+    return res.status(400).json({
+      status: Status.FAILED,
+      message: "Invalid time range for appointment.",
+    });
+  }
 
   try {
-    const doctorExists = await prisma.doctor.findUnique({
-      where: { id: doctorId },
-    });
-
-    if (!doctorExists) {
-      return res
-        .status(400)
-        .json({ status: Status.BAD_REQUEST, message: "Invalid doctor ID." });
-    }
-
-    const patientExists = await prisma.patient.findUnique({
-      where: { id: patientId },
-    });
-
-    if (!patientExists) {
-      return res
-        .status(400)
-        .json({ status: Status.BAD_REQUEST, message: "Invalid patient ID." });
-    }
-    const slot = await prisma.slot.findUnique({
+    const availability = await prisma.availability.findFirst({
       where: {
-        id: slotId,
-        AND: {
-          doctorId,
+        doctorId,
+        dayOfWeek,
+        effectiveTo: null,
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    if (!availability) {
+      return res.status(400).json({
+        status: Status.FAILED,
+        message: "Failed to create appointment. Doctor unavailable.",
+      });
+    }
+
+    if (
+      !isSlotWithinAvailability(
+        startTime,
+        endTime,
+        availability.startTime,
+        availability.endTime
+      )
+    ) {
+      return res.status(400).json({
+        status: Status.FAILED,
+        message:
+          "Failed to create appointment. Slot outside doctor's availability.",
+      });
+    }
+
+    const doctorLeave = await prisma.doctorLeave.findFirst({
+      where: {
+        doctorId,
+        date: new Date(moment(startTime).format("YYYY-MM-DD")),
+      },
+    });
+
+    if (doctorLeave != null) {
+      return res.status(400).json({
+        status: Status.FAILED,
+        message: "Failed to create appointment. Doctor unavailable.",
+      });
+    }
+
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        doctorId,
+        startTime: {
+          lt: new Date(endTime),
+        },
+        endTime: {
+          gt: new Date(startTime),
         },
       },
     });
-    if (!slot || slot.isBooked) {
-      return res.status(404).json({
+
+    if (existingAppointment) {
+      return res.status(400).json({
         status: Status.FAILED,
-        message: "Slot not found or is already booked",
+        message: "Failed to create appointment. Slot already booked.",
       });
     }
 
-    const data = await prisma.$transaction(async (trx) => {
-      const result = await trx.slot.update({
-        where: {
-          id: slot.id,
-        },
-        data: {
-          isBooked: true,
-        },
-      });
-
-      if (!result || !result.isBooked) {
-        throw new Error("Slot not available or does not exist");
-      }
-
-      const appointment = await trx.appointment.create({
-        data: {
-          patientId,
-          doctorId,
-          slotId: slot.id,
-          status: "created",
-        },
-      });
-
-      return { ...appointment, slot: result };
+    const appointment = await prisma.appointment.create({
+      data: {
+        doctorId,
+        patientId,
+        status: "created",
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+      },
     });
+
+    if (!appointment) {
+      return res.status(500).json({
+        status: Status.ERROR,
+        message: "Failed to create appointment",
+      });
+    }
 
     return res.status(201).json({
       status: Status.SUCCESS,
       message: "Appointment created successfully",
-      data,
     });
   } catch (err) {
-    console.log(err);
+    logger.error({ message: "Failed to book appointment", error: err });
     return res
       .status(500)
       .json({ status: Status.ERROR, message: (err as Error).message });

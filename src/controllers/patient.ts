@@ -8,10 +8,11 @@ import {
   patientLoginSchema,
   patientRegisterSchema,
 } from "../schemas/patient.schema";
+import logger from "../utils/logger";
 
 export const handlePatientRegister = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const result = patientRegisterSchema.safeParse(req);
   if (!result.success) {
@@ -38,14 +39,14 @@ export const handlePatientRegister = async (
       data: { ...response, password: undefined },
     });
   } catch (err) {
-    console.log(err);
+    logger.error({ message: "Failed to register patient", error: err });
     return res.status(500).json({ status: Status.ERROR, message: err });
   }
 };
 
 export const updatePatientRegister = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const { name, id, phone, gender, age } = req.body.user;
   const patient = {
@@ -74,7 +75,7 @@ export const updatePatientRegister = async (
 
 export const handlePatientLogin = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const result = patientLoginSchema.safeParse(req.body);
   if (!result.success) {
@@ -102,7 +103,7 @@ export const handlePatientLogin = async (
       process.env.JWT_SECRET as string,
       {
         expiresIn: "1h",
-      },
+      }
     );
     return res.status(200).json({
       status: Status.SUCCESS,
@@ -116,7 +117,7 @@ export const handlePatientLogin = async (
 
 export const getPatientsList = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   try {
     return res.json({
@@ -140,7 +141,7 @@ export const getPatientsList = async (
  */
 export const getPatientWithID = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
+  res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
   try {

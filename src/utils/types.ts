@@ -15,3 +15,8 @@ export interface BaseResponse {
   status: number;
   message: string;
 }
+
+export interface Slot {
+  startTime: Date;
+  endTime: Date;
+}

@@ -11,20 +11,21 @@ datasource db {
 }
 
 model Doctor {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  gender       String
-  phone        String         @unique
-  imageUrl     String?
-  signatureUrl String?
-  role         String
-  password     String
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  gender         String
+  phone          String  @unique
+  imageUrl       String?
+  signatureUrl   String?
+  specialization String
+  password       String
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  Slot         Slot[]
   Consultation Consultation[]
   Appointment  Appointment[]
   Availability Availability[]
+  DoctorLeave  DoctorLeave[]
 }
 
 model Patient {
@@ -42,62 +43,61 @@ model Patient {
 }
 
 model Availability {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  doctorId  String
-  startTime String
-  endTime   String
-  weekStart String
-  dayOfWeek String
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId      String    @db.ObjectId
+  dayOfWeek     Int
+  startTime     DateTime
+  endTime       DateTime
+  slotDuration  Int
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+
   doctor    Doctor   @relation(fields: [doctorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Slot      Slot[]
-
-  @@unique([doctorId, dayOfWeek])
 }
 
-model Slot {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  doctorId       String
-  availabilityId String
-  startTime      DateTime
-  endTime        DateTime
-  dayOfWeek      String
-  isBooked       Boolean       @default(false)
-  doctor         Doctor        @relation(fields: [doctorId], references: [id])
-  availability   Availability  @relation(fields: [availabilityId], references: [id])
-  Appointment    Appointment[]
+model DoctorLeave {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId  String    @db.ObjectId
+  date      DateTime  @db.Date
+  startTime DateTime?
+  endTime   DateTime?
 
-  @@unique([availabilityId, startTime])
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Appointment {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  doctorId     String
-  patientId    String
-  slotId       String
-  status       String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId  String   @db.ObjectId
+  patientId String   @db.ObjectId
+  status    String
+  startTime DateTime
+  endTime   DateTime
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   doctor       Doctor         @relation(fields: [doctorId], references: [id])
   patient      Patient        @relation(fields: [patientId], references: [id])
-  slot         Slot           @relation(fields: [slotId], references: [id])
   consultation Consultation[]
 }
 
 model Consultation {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  doctorId            String
-  patientId           String
-  appointmentId       String
+  id                  String  @id @default(auto()) @map("_id") @db.ObjectId
+  doctorId            String  @db.ObjectId
+  patientId           String  @db.ObjectId
+  appointmentId       String  @db.ObjectId
   prescriptionUrl     String?
   prescriptionContent String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   doctor      Doctor      @relation(fields: [doctorId], references: [id])
   patient     Patient     @relation(fields: [patientId], references: [id])
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
-  @@unique([doctorId, appointmentId])
+  @@unique([appointmentId])
 }

@@ -1,32 +1,30 @@
-export function generateSlots(
-  availability: any[],
-  interval: number,
-  doctorId: string,
-) {
+import { Slot } from "./types";
+
+export function generateSlots(availability: Slot, interval: number) {
   const slots = [];
-  for (let { startTime, endTime, id, dayOfWeek } of availability) {
-    startTime = new Date(startTime);
-    endTime = new Date(endTime);
-    let currentStartTime = new Date(startTime);
-    let currentEndTime = new Date(currentStartTime);
-    currentEndTime.setMinutes(currentEndTime.getMinutes() + interval);
+  let { startTime, endTime } = availability;
+  let cursor = new Date(startTime);
 
-    while (currentEndTime <= endTime) {
-      slots.push({
-        startTime: currentStartTime.toISOString(),
-        endTime: currentEndTime.toISOString(),
-        doctorId,
-        dayOfWeek,
-        availabilityId: id,
-        isBooked: false,
-      });
+  while (cursor < endTime) {
+    const next = new Date(cursor.getTime() + interval * 60 * 1000);
 
-      currentStartTime.setMinutes(currentStartTime.getMinutes() + interval);
-      currentEndTime.setMinutes(currentEndTime.getMinutes() + interval);
+    if (next > endTime) {
+      break;
     }
+
+    slots.push({
+      startTime: new Date(cursor),
+      endTime: next,
+    });
+
+    cursor = next;
   }
 
   return slots;
+}
+
+export function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  return aStart < bEnd && aEnd > bStart;
 }
 
 export const getFormattedSpeechData = (speechData: {
@@ -42,4 +40,38 @@ export const getFormattedSpeechData = (speechData: {
     ? `Advice, ${speechData.advice}`
     : "";
   return formattedSpeechData;
+};
+
+export const timeToDate = (time: string): Date => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const date = new Date(Date.UTC(1970, 0, 1));
+  date.setUTCHours(hours, minutes, 0, 0);
+  return date;
+};
+
+export function timeParts(d: Date) {
+  return {
+    hours: d.getUTCHours(),
+    minutes: d.getUTCMinutes(),
+  };
+}
+
+export const isSlotWithinAvailability = (
+  slotStart: Date,
+  slotEnd: Date,
+  availabilityStart: Date,
+  availabilityEnd: Date
+): boolean => {
+  let slotStartMin = minutesSinceMidnight(slotStart);
+  let slotEndMin = minutesSinceMidnight(slotEnd);
+  let availabilityStartMin = minutesSinceMidnight(availabilityStart);
+  let availabilityEndMin = minutesSinceMidnight(availabilityEnd);
+
+  return (
+    slotStartMin >= availabilityStartMin && slotEndMin <= availabilityEndMin
+  );
+};
+
+const minutesSinceMidnight = (d: Date) => {
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
 };

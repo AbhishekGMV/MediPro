@@ -7,7 +7,7 @@ import logger from "../utils/logger";
 export const auth = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Response<void> | undefined => {
   const authHeader = req.header("Authorization");
   const token = authHeader?.split(" ")[1];
@@ -19,16 +19,8 @@ export const auth = (
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET ?? "");
     const { id } = decoded as JwtPayload;
-    if (id !== req.headers.id) {
-      res.status(403).json({
-        status: Status.FORBIDDEN,
-        message: "You are not authorized to access this resource",
-      });
-      logger.error({
-        message: `Invalid authorization request by user: ${id}, provided: ${req.headers.id}`,
-      });
-      return;
-    }
+    (req as any).user = { id };
+
     next();
   } catch (error) {
     return res
