@@ -125,6 +125,7 @@ export const createAppointment = async (
         endTime: {
           gt: new Date(startTime),
         },
+        status: AppointmentStatus.CONFIRMED,
       },
     });
 
@@ -177,10 +178,14 @@ export const cancelAppointment = async (
       },
     });
 
-    if (!existingAppointment) {
-      return res
-        .status(404)
-        .json({ status: Status.FAILED, message: "Appointment not found" });
+    if (
+      !existingAppointment ||
+      existingAppointment.status === AppointmentStatus.COMPLETED
+    ) {
+      return res.status(404).json({
+        status: Status.FAILED,
+        message: "Appointment not found or already complete",
+      });
     }
 
     const appointment = await prisma.appointment.update({

@@ -23,6 +23,7 @@ import {
   uploadFile,
 } from "../utils/helper";
 import { s3client } from "../config/storage";
+import { AppointmentStatus } from "../utils/constants";
 
 export const getDoctorsList = async (
   _req: Request,
@@ -432,6 +433,7 @@ export const getAvailableSlots = async (
         endTime: {
           gt: dayStart,
         },
+        status: AppointmentStatus.CONFIRMED,
       },
       select: {
         startTime: true,
