@@ -1,6 +1,5 @@
 import { Status } from "../utils/status";
 import prisma from "../config/prisma";
-import supabase from "../config/supabase";
 import { Request, Response } from "express";
 import logger from "../utils/logger";
 import {
@@ -187,22 +186,22 @@ export const handlePrescriptionFileUpload = async (
       .json({ status: Status.BAD_REQUEST, message: "Invalid consultation id" });
   }
 
-  const bucket = process.env.SUPABASE_PRESCRIPTIONS_BUCKET ?? "misc";
+  // const bucket = process.env.SUPABASE_PRESCRIPTIONS_BUCKET ?? "misc";
   try {
-    const filename = `${consultation.patientId}/prescription`;
-    const { error } = await supabase.storage
-      .from(bucket)
-      .upload(filename, (req.file as Express.Multer.File).buffer, {
-        contentType: "application/pdf",
-        upsert: true,
-      });
-    logger.error({ message: error, interactionId: req.headers.interactionId });
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filename);
+    // const filename = `${consultation.patientId}/prescription`;
+    // const { error } = await supabase.storage
+    //   .from(bucket)
+    //   .upload(filename, (req.file as Express.Multer.File).buffer, {
+    //     contentType: "application/pdf",
+    //     upsert: true,
+    //   });
+    // logger.error({ message: error, interactionId: req.headers.interactionId });
+    // const { data } = supabase.storage.from(bucket).getPublicUrl(filename);
 
     const result = await prisma.consultation.update({
       where: { id: consultation.id },
       data: {
-        prescriptionUrl: data.publicUrl,
+        // prescriptionUrl: data.publicUrl,
       },
     });
     return res.status(200).json({
