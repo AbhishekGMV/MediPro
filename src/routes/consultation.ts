@@ -35,7 +35,13 @@ router.post(
     consultationController.handlePrescriptionFileUpload(req, res);
   }
 );
+
 router.put("/prescription-content", (req: any, res: any) => {
   consultationController.updatePrescriptionContent(req, res);
 });
+
+router.get("/:id/prescription", (req: any, res: any) => {
+  consultationController.getPrescriptionUrl(req, res);
+});
+
 export default router;

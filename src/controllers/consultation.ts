@@ -7,7 +7,11 @@ import {
   consultationSchema,
   prescriptionSchema,
 } from "../schemas/consultation.schema";
-import { getFormattedSpeechData, uploadFile } from "../utils/helper";
+import {
+  getFormattedSpeechData,
+  getPreSignedUrl,
+  uploadFile,
+} from "../utils/helper";
 import { AppointmentStatus } from "../utils/constants";
 
 export const getConsultationList = async (
@@ -303,6 +307,40 @@ export const completeConsultation = async (
     res.status(500).json({
       status: Status.INTERNAL_SERVER_ERROR,
       message: "Failed to update consultation details",
+    });
+  }
+};
+
+export const getPrescriptionUrl = async (
+  req: { params: { id: any } },
+  res: any
+): Promise<void> => {
+  const id = req.params.id;
+  try {
+    const consultation = await prisma.consultation.findUnique({
+      where: { id },
+      select: { prescriptionUrl: true },
+    });
+    if (!consultation) {
+      return res.status(404).json({
+        status: Status.NOT_FOUND,
+        message: "Consultation not found",
+      });
+    }
+    if (!consultation.prescriptionUrl) {
+      return res.status(404).json({
+        status: Status.NOT_FOUND,
+        message: "Prescription file not found",
+      });
+    }
+    return res.status(200).json({
+      status: Status.SUCCESS,
+      data: await getPreSignedUrl(consultation.prescriptionUrl),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      status: Status.ERROR,
+      message: (err as Error).message,
     });
   }
 };
