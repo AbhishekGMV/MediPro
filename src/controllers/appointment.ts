@@ -6,6 +6,7 @@ import { ParsedQs } from "qs";
 import { AppointmentSchema } from "../schemas/appointment.schema";
 import { isSlotWithinAvailability } from "../utils/helper";
 import logger from "../utils/logger";
+import { AppointmentStatus } from "../utils/constants";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,
@@ -15,7 +16,26 @@ export const getAppointmentList = async (
     return res.json({
       status: Status.SUCCESS,
       data: await prisma.appointment.findMany({
-        include: {},
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          doctor: {
+            select: {
+              name: true,
+              specialization: true,
+              phone: true,
+              imageUrl: true,
+            },
+          },
+          patient: {
+            select: {
+              name: true,
+              age: true,
+            },
+          },
+        },
       }),
     });
   } catch (err) {
@@ -119,7 +139,7 @@ export const createAppointment = async (
       data: {
         doctorId,
         patientId,
-        status: "created",
+        status: AppointmentStatus.CONFIRMED,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
       },
@@ -144,144 +164,86 @@ export const createAppointment = async (
   }
 };
 
-// export const cancelAppointment = async (
-//   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
-//   res: Response<any, Record<string, any>, number>,
-// ): Promise<any> => {
-//   const { id, doctorId } = req.body;
+export const cancelAppointment = async (
+  req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
+  res: Response<any, Record<string, any>, number>
+): Promise<any> => {
+  const { id } = req.params;
 
-//   try {
-//     const existingAppointment = await prisma.appointment.findFirst({
-//       where: {
-//         id,
-//       },
-//       select: {
-//         slot: {
-//           select: {
-//             id: true,
-//           },
-//         },
-//       },
-//     });
+  try {
+    const existingAppointment = await prisma.appointment.findUnique({
+      where: {
+        id,
+      },
+    });
 
-//     if (!existingAppointment) {
-//       return res
-//         .status(404)
-//         .json({ status: Status.FAILED, message: "Appointment not found" });
-//     }
+    if (!existingAppointment) {
+      return res
+        .status(404)
+        .json({ status: Status.FAILED, message: "Appointment not found" });
+    }
 
-//     const result = await prisma.$transaction(async (trx) => {
-//       const appointment = await trx.appointment.delete({
-//         where: {
-//           id,
-//         },
-//       });
+    const appointment = await prisma.appointment.update({
+      data: { status: AppointmentStatus.CANCELLED },
+      where: { id },
+    });
 
-//       if (!appointment) throw new Error("Appointment not found");
+    if (appointment.status !== AppointmentStatus.CANCELLED) {
+      return res.status(500).json({
+        status: Status.ERROR,
+        message: "Failed to cancel appointment",
+      });
+    }
 
-//       const result = await trx.slot.update({
-//         where: {
-//           id: existingAppointment.slot.id,
-//           doctorId,
-//         },
-//         data: {
-//           status: "available",
-//         },
-//       });
-//       return { slot: { id: result.id }, appointment: { id: appointment.id } };
-//     });
+    return res.status(200).json({
+      status: Status.SUCCESS,
+      message: "Appointment cancelled successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
 
-//     if (!result) {
-//       return res
-//         .status(404)
-//         .json({ status: Status.FAILED, message: "Slot not found" });
-//     }
-
-//     return res.status(200).json({
-//       status: Status.SUCCESS,
-//       message: "Appointment cancelled successfully",
-//       data: result,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ status: Status.ERROR, message: err });
-//   }
-// };
-
-// export const getAppointmentWithID = async (
-//   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-//   res: Response<any, Record<string, any>, number>,
-// ): Promise<any> => {
-//   const id = req.params.id;
-//   try {
-//     const appointments = await prisma.appointment.findUnique({
-//       where: {
-//         id,
-//       },
-//       include: {
-//         slot: true,
-//       },
-//     });
-//     return res.status(200).json({ status: Status.SUCCESS, data: appointments });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ status: Status.ERROR, message: err });
-//   }
-// };
-
-// export const getAppointmentWithPID = async (
-//   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
-//   res: Response<any, Record<string, any>, number>,
-// ): Promise<any> => {
-//   const id = req.params.id;
-//   try {
-//     const appointments = await prisma.appointment.findMany({
-//       where: {
-//         patientId: id,
-//       },
-//       include: {
-//         slot: true,
-//       },
-//     });
-//     return res.status(200).json({ status: Status.SUCCESS, data: appointments });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ status: Status.ERROR, message: err });
-//   }
-// };
-
-export const getDoctorAppointmentList = async (
+export const getAppointmentWithID = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
   res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
   const id = req.params.id;
-  const { date } = req.query;
-  const filters: {
-    doctorId: string;
-    slot?: {
-      startTime: {
-        gte: Date;
-        lt: Date;
-      };
-    };
-  } = { doctorId: id, slot: undefined };
+  const { date, status } = req.query;
+  const filters: any = { id };
 
   if (date) {
-    const startDate = new Date(date as string);
-    const endDate = new Date(date as string);
-    endDate.setDate(endDate.getDate() + 1);
-    filters.slot = {
-      startTime: {
-        gte: startDate,
-        lt: endDate,
-      },
-    };
+    const startOfDay = moment(date as string)
+      .startOf("day")
+      .toDate();
+    const endOfDay = moment(date as string)
+      .endOf("day")
+      .toDate();
+    filters.startTime = { gte: startOfDay };
+    filters.endTime = { lte: endOfDay };
+  }
+
+  if (status) {
+    filters.status = status;
   }
 
   try {
-    const appointments = await prisma.appointment.findMany({
+    const appointments = await prisma.appointment.findUnique({
       where: filters,
-      include: {
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        doctor: {
+          select: {
+            name: true,
+            specialization: true,
+            phone: true,
+            imageUrl: true,
+          },
+        },
         patient: {
           select: {
             name: true,
@@ -291,7 +253,111 @@ export const getDoctorAppointmentList = async (
             imageUrl: true,
           },
         },
-        // slot: true,
+      },
+    });
+    return res.status(200).json({ status: Status.SUCCESS, data: appointments });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const getDoctorAppointmentList = async (
+  req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
+  res: Response<any, Record<string, any>, number>
+): Promise<any> => {
+  const id = req.params.id;
+  const { date, status, patientId } = req.query;
+  const filters: any = { doctorId: id };
+
+  if (date) {
+    const startOfDay = moment(date as string)
+      .startOf("day")
+      .toDate();
+    const endOfDay = moment(date as string)
+      .endOf("day")
+      .toDate();
+    filters.startTime = { gte: startOfDay };
+    filters.endTime = { lte: endOfDay };
+  }
+
+  if (status) {
+    filters.status = status;
+  }
+
+  if (patientId) {
+    filters.patientId = patientId;
+  }
+
+  try {
+    const appointments = await prisma.appointment.findMany({
+      where: filters,
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        patient: {
+          select: {
+            name: true,
+            age: true,
+            gender: true,
+            phone: true,
+            imageUrl: true,
+          },
+        },
+      },
+    });
+    return res.status(200).json({ status: Status.SUCCESS, data: appointments });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const getPatientAppointmentList = async (
+  req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
+  res: Response<any, Record<string, any>, number>
+): Promise<any> => {
+  const id = req.params.id;
+  const { date, status, doctorId } = req.query;
+  const filters: any = { patientId: id };
+
+  if (date) {
+    const startOfDay = moment(date as string)
+      .startOf("day")
+      .toDate();
+    const endOfDay = moment(date as string)
+      .endOf("day")
+      .toDate();
+    filters.startTime = { gte: startOfDay };
+    filters.endTime = { lte: endOfDay };
+  }
+
+  if (status) {
+    filters.status = status;
+  }
+
+  if (doctorId) {
+    filters.doctorId = doctorId;
+  }
+
+  try {
+    const appointments = await prisma.appointment.findMany({
+      where: filters,
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        doctor: {
+          select: {
+            name: true,
+            gender: true,
+            phone: true,
+            imageUrl: true,
+          },
+        },
       },
     });
     return res.status(200).json({ status: Status.SUCCESS, data: appointments });
