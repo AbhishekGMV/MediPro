@@ -128,6 +128,23 @@ router.post(
 );
 
 router.post(
+  "/:id/availability",
+  auth,
+  (
+    req: express.Request<
+      ParamsDictionary,
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    doctorController.upsertAvailability(req, res);
+  }
+);
+
+router.post(
   "/:id/leave",
   auth,
   (

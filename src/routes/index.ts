@@ -1,7 +1,6 @@
 import express from "express";
 import patientRouter from "./patient";
 import doctorRouter from "./doctor";
-import availabilityRouter from "./availability";
 import consultationRouter from "./consultation";
 import appointmentRouter from "./appointment";
 import { auth } from "../middleware/auth";
@@ -20,8 +19,6 @@ router.use(logRequestMiddleware);
 router.use("/patient", patientRouter);
 
 router.use("/doctor", doctorRouter);
-
-router.use("/availability", auth, availabilityRouter);
 
 router.use("/consultation", auth, consultationRouter);
 

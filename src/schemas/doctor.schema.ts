@@ -32,3 +32,31 @@ export const DoctorLeaveSchema = z.object({
     date: z.string().date(),
   }),
 });
+
+const DoctorSlotSchema = z.object({
+  startTime: z.string(),
+  endTime: z.string(),
+  dayOfWeek: z.number(),
+});
+
+export const DoctorAvailabilitySchema = z.object({
+  headers: z.object({
+    id: z.string(),
+  }),
+  body: z.object({
+    weeklyAvailability: z.array(DoctorSlotSchema).transform((arr) =>
+      arr.map((val) => ({
+        startTime: new Date(val.startTime),
+        endTime: new Date(val.endTime),
+        dayOfweek: Number(val.dayOfWeek),
+      }))
+    ),
+    interval: z
+      .number()
+      .int()
+      .positive()
+      .refine((value) => [15, 30].includes(value), {
+        message: "Interval must be either 15 or 30 minutes",
+      }),
+  }),
+});

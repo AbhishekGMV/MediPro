@@ -4,6 +4,7 @@ import { Status } from "../utils/status";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
+  DoctorAvailabilitySchema,
   DoctorLeaveSchema,
   doctorLoginSchema,
   doctorRegisterSchema,
@@ -17,7 +18,12 @@ import {
 import logger from "../utils/logger";
 import { INTERACTION_ID } from "../utils/constants";
 import moment from "moment";
-import { generateSlots, overlaps, timeParts } from "../utils/helper";
+import {
+  generateSlots,
+  overlaps,
+  timeParts,
+  timeToDate,
+} from "../utils/helper";
 import { time } from "console";
 
 const config = {
@@ -318,6 +324,49 @@ export const addDoctorLeave = async (
       .json({ status: Status.SUCCESS, message: "Leave added successfully" });
   } catch (err) {
     logger.error({ message: "Failed to update leave", error: err });
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const upsertAvailability = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const result = DoctorAvailabilitySchema.safeParse(req);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  const { interval, weeklyAvailability } = req.body;
+  const doctorId = req.headers.id as string;
+
+  try {
+    await prisma.availability.updateMany({
+      where: { doctorId, effectiveTo: null },
+      data: { effectiveTo: new Date() },
+    });
+
+    await Promise.all(
+      weeklyAvailability.map(async (availability: any) => {
+        return prisma.availability.create({
+          data: {
+            doctorId,
+            dayOfWeek: availability.dayOfWeek,
+            startTime: timeToDate(availability.startTime),
+            endTime: timeToDate(availability.endTime),
+            effectiveFrom: new Date(),
+            effectiveTo: null,
+            slotDuration: interval,
+          },
+        });
+      })
+    );
+
+    logger.info({ message: "Availability updated successfully" });
+    return res
+      .status(200)
+      .json({ status: Status.SUCCESS, message: "Availability updated" });
+  } catch (err) {
+    logger.error({ message: "Failed to update availability", error: err });
     return res.status(500).json({ status: Status.ERROR, message: err });
   }
 };
