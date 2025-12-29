@@ -1,6 +1,16 @@
 {
   "dependencies": {
     "@aws-sdk/client-s3": "^3.937.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.67.3",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.208.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.208.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/sdk-logs": "^0.208.0",
+    "@opentelemetry/sdk-metrics": "^2.2.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
+    "@opentelemetry/sdk-trace-node": "^2.2.0",
+    "@opentelemetry/winston-transport": "^0.19.0",
     "@prisma/client": "5.2.0",
     "@supabase/supabase-js": "^2.34.0",
     "bcryptjs": "^2.4.3",
@@ -29,7 +39,7 @@
   "main": "dist/src/app.js",
   "scripts": {
     "test": "vitest",
-    "dev": "nodemon --exec ts-node src/app.ts",
+    "dev": "nodemon --exec ts-node --require ./src/utils/instrumentation.ts src/app.ts --import",
     "start": "node dist/src/app.js",
     "build": "prisma generate && tsc -p .",
     "vercel-build": "prisma generate",
