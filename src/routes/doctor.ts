@@ -177,4 +177,8 @@ router.get(
   }
 );
 
+router.get("/:id/signature", (req: any, res: any) => {
+  doctorController.getDoctorSignatureUrl(req, res);
+});
+
 export default router;

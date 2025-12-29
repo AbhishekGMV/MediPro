@@ -10,32 +10,19 @@ import {
   doctorRegisterSchema,
   doctorSignatureFileUpdateSchema,
 } from "../schemas/doctor.schema";
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+
 import logger from "../utils/logger";
-import { INTERACTION_ID } from "../utils/constants";
 import moment from "moment";
 import {
   generateSlots,
+  getPreSignedUrl,
   overlaps,
   timeParts,
   timeToDate,
+  uploadFile,
 } from "../utils/helper";
-import { time } from "console";
-
-const config = {
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
-  },
-  endpoint: process.env.R2_ENDPOINT as string,
-  region: "auto",
-};
-
-const client = new S3Client(config);
+import { s3client } from "../config/storage";
 
 export const getDoctorsList = async (
   _req: Request,
@@ -123,7 +110,6 @@ export const handleDoctorLogin = async (
   } catch (err: any) {
     logger.error({
       message: "login failed",
-      interactionId: req.headers[INTERACTION_ID],
       error: err.name,
       description: err.message,
       stack: err.stack,
@@ -197,7 +183,7 @@ export const handleSignatureFileUpload = async (
     const schemaValidation = doctorSignatureFileUpdateSchema.safeParse(req);
     const { id } = req.params;
 
-    if (!schemaValidation.success) {
+    if (!schemaValidation.success || req.file === undefined) {
       logger.error({ error: schemaValidation.error });
       return res
         .status(400)
@@ -205,17 +191,25 @@ export const handleSignatureFileUpload = async (
     }
     const doctor = await prisma.doctor.findUnique({ where: { id } });
     if (!doctor) {
-      logger.warn({
+      logger.info({
         message: "User not found",
       });
       return res
         .status(400)
         .json({ status: Status.FAILED, message: "User not found" });
     }
-    await uploadSignatureFile(req.file, doctor);
+    const { key } = await uploadFile({
+      bucket: process.env.S3_BUCKET_NAME as string,
+      key: `signatures/${doctor.id}-${req.file.originalname}`,
+      body: req.file.buffer,
+      contentType: req.file.mimetype,
+    });
+    if (!key) {
+      throw new Error("File upload failed");
+    }
     const result = await prisma.doctor.update({
       where: { id: doctor.id },
-      data: { signatureUrl: doctor.signatureUrl },
+      data: { signatureUrl: key },
       select: {
         id: true,
         signatureUrl: true,
@@ -225,7 +219,7 @@ export const handleSignatureFileUpload = async (
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Doctor data update successful",
-      data: { ...result, password: undefined },
+      data: result,
     });
   } catch (err: any) {
     logger.error({
@@ -273,15 +267,15 @@ export const deleteDoctorWithID = async (
       .json({ status: "Not found", message: "No doctor found for given id" });
   }
   if (doctor.signatureUrl) {
-    const response = await client.send(
+    const response = await s3client.send(
       new DeleteObjectCommand({
-        Bucket: process.env.R2_BUCKET as string,
+        Bucket: process.env.SIGNATURES_BUCKET as string,
         Key: `${doctor.id}_signature.png`,
       })
     );
     if (response.$metadata.httpStatusCode !== 204) {
       logger.warn({
-        message: "Failed to delete signature file from R2",
+        message: "Failed to delete signature file",
         doctorId: doctor.id,
       });
     }
@@ -475,24 +469,32 @@ export const getAvailableSlots = async (
   }
 };
 
-const uploadSignatureFile = async (
-  file: Express.Multer.File | undefined,
-  user: any
-) => {
-  if (file === undefined) {
-    throw new Error("Invalid file");
+export const getDoctorSignatureUrl = async (
+  req: { params: { id: string } },
+  res: any
+): Promise<void> => {
+  const doctorId = req.params.id;
+
+  try {
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: doctorId },
+      select: { signatureUrl: true },
+    });
+
+    if (!doctor || !doctor.signatureUrl) {
+      return res
+        .status(404)
+        .json({ status: Status.NOT_FOUND, message: "Signature not found" });
+    }
+
+    return res.status(200).json({
+      status: Status.SUCCESS,
+      data: { signatureUrl: await getPreSignedUrl(doctor.signatureUrl) },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      status: Status.ERROR,
+      message: (err as Error).message,
+    });
   }
-  const filename = `${user.id}_signature.png`;
-  const bucket = process.env.R2_BUCKET as string;
-  const input = {
-    Body: file.buffer,
-    Bucket: bucket,
-    Key: filename,
-  };
-  const command = new PutObjectCommand(input);
-  const response = await client.send(command);
-  if (response.$metadata.httpStatusCode !== 200) {
-    throw new Error("Failed to upload file to R2");
-  }
-  user.singnatureUrl = `${process.env.R2_PUBLIC_ENDPOINT}/${filename}`;
 };

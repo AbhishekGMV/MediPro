@@ -20,3 +20,14 @@ export interface Slot {
   startTime: Date;
   endTime: Date;
 }
+
+export type UploadInput = {
+  bucket: string;
+  key: string;
+  body: Buffer;
+  contentType: string;
+};
+
+export type UploadResult = {
+  key: string;
+};

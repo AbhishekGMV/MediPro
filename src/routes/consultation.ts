@@ -19,13 +19,14 @@ router.put("/complete/:id", (req: any, res: any) => {
 router.get("/patient/:id", (req: any, res: any) => {
   consultationController.getPatientConsultation(req, res);
 });
+
 router.get("/doctor/:id", (req: any, res: any) => {
   consultationController.getDoctorConsultation(req, res);
 });
 
-// router.post("/", (req: any, res: any) => {
-//   consultationController.createConsultationMetaData(req, res);
-// });
+router.post("/", (req: any, res: any) => {
+  consultationController.createConsultationMetaData(req, res);
+});
 
 router.post(
   "/prescription",

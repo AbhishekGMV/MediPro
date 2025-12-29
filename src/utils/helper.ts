@@ -1,4 +1,7 @@
-import { Slot } from "./types";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3client } from "../config/storage";
+import { Slot, UploadInput, UploadResult } from "./types";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export function generateSlots(availability: Slot, interval: number) {
   const slots = [];
@@ -74,4 +77,33 @@ export const isSlotWithinAvailability = (
 
 const minutesSinceMidnight = (d: Date) => {
   return d.getUTCHours() * 60 + d.getUTCMinutes();
+};
+
+export async function uploadFile(input: UploadInput): Promise<UploadResult> {
+  const { bucket, key, body, contentType } = input;
+
+  await s3client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+
+  return { key };
+}
+
+export const getPreSignedUrl = async (key: string) => {
+  if (!key) {
+    return null;
+  }
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME as string,
+    Key: key,
+  };
+
+  const command = new GetObjectCommand(params);
+  const url = await getSignedUrl(s3client, command, { expiresIn: 3600 });
+  return url;
 };

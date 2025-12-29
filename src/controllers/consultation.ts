@@ -7,14 +7,22 @@ import {
   consultationSchema,
   prescriptionSchema,
 } from "../schemas/consultation.schema";
-import { getFormattedSpeechData } from "../utils/helper";
+import { getFormattedSpeechData, uploadFile } from "../utils/helper";
+import { AppointmentStatus } from "../utils/constants";
 
 export const getConsultationList = async (
   req: any,
   res: any
 ): Promise<void> => {
   try {
-    const data = await prisma.consultation.findMany();
+    const data = await prisma.consultation.findMany({
+      select: {
+        id: true,
+        appointmentId: true,
+        prescriptionUrl: true,
+        prescriptionContent: true,
+      },
+    });
     return res.status(200).json({
       status: Status.SUCCESS,
       data,
@@ -33,7 +41,15 @@ export const getConsultationWithID = async (
 ): Promise<void> => {
   const id = req.params.id;
   try {
-    const data = await prisma.consultation.findUnique({ where: { id } });
+    const data = await prisma.consultation.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        appointmentId: true,
+        prescriptionUrl: true,
+        prescriptionContent: true,
+      },
+    });
     return res.status(200).json({
       status: Status.SUCCESS,
       data,
@@ -55,7 +71,10 @@ export const getPatientConsultation = async (
   try {
     const data = await prisma.consultation.findMany({
       where: { patientId: id },
-      include: {
+      select: {
+        appointmentId: true,
+        prescriptionUrl: true,
+        prescriptionContent: true,
         doctor: {
           select: {
             name: true,
@@ -105,67 +124,68 @@ export const getDoctorConsultation = async (
   }
 };
 
-// export const createConsultationMetaData = async (
-//   req: Request,
-//   res: Response,
-// ) => {
-//   const doctorId = req.headers.id as string;
-//   const result = consultationMetaDataSchema.safeParse(req.body);
-//   if (!result.success) {
-//     return res
-//       .status(400)
-//       .json({ status: Status.BAD_REQUEST, message: result.error });
-//   }
-//   const { patientId, appointmentId } = req.body.payload;
+export const createConsultationMetaData = async (
+  req: Request,
+  res: Response
+) => {
+  const doctorId = req.headers.id as string;
+  const result = consultationMetaDataSchema.safeParse(req.body);
+  if (!result.success) {
+    return res
+      .status(400)
+      .json({ status: Status.BAD_REQUEST, message: result.error });
+  }
+  const { patientId, appointmentId } = req.body.payload;
 
-//   const patient = await prisma.patient.findUnique({
-//     where: { id: patientId as string },
-//   });
-//   if (!patient) {
-//     return res
-//       .status(400)
-//       .json({ status: Status.BAD_REQUEST, message: "Invalid patient id" });
-//   }
-//   const appointment = await prisma.appointment.findUnique({
-//     where: { id: appointmentId as string },
-//   });
-//   if (!appointment) {
-//     return res
-//       .status(400)
-//       .json({ status: Status.BAD_REQUEST, message: "Invalid appointment id" });
-//   }
-//   try {
-//     const result = await prisma.consultation.upsert({
-//       where: {
-//         doctorId_appointmentId: {
-//           doctorId,
-//           appointmentId,
-//         },
-//       },
-//       update: {
-//         patientId,
-//         doctorId,
-//         appointmentId,
-//       },
-//       create: {
-//         patientId,
-//         doctorId,
-//         appointmentId,
-//       },
-//     });
-//     return res.status(200).json({
-//       status: Status.SUCCESS,
-//       message: "Consultation info updated",
-//       data: result,
-//     });
-//   } catch (err) {
-//     logger.error({ message: (err as Error).message });
-//     return res.status(500).json({
-//       status: Status.INTERNAL_SERVER_ERROR,
-//       message: "Failed to update consultation details",
-//     });
-//   }
-// };
+  const patient = await prisma.patient.findUnique({
+    where: { id: patientId as string },
+  });
+  if (!patient) {
+    return res
+      .status(400)
+      .json({ status: Status.BAD_REQUEST, message: "Invalid patient id" });
+  }
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId as string },
+  });
+  if (!appointment) {
+    return res
+      .status(400)
+      .json({ status: Status.BAD_REQUEST, message: "Invalid appointment id" });
+  }
+  try {
+    const result = await prisma.consultation.upsert({
+      where: {
+        doctorId,
+        appointmentId,
+      },
+      update: {
+        patientId,
+        doctorId,
+        appointmentId,
+      },
+      create: {
+        patientId,
+        doctorId,
+        appointmentId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    return res.status(200).json({
+      status: Status.SUCCESS,
+      message: "Consultation info updated",
+      data: result,
+    });
+  } catch (err) {
+    logger.error({ message: (err as Error).message });
+    return res.status(500).json({
+      status: Status.INTERNAL_SERVER_ERROR,
+      message: "Failed to update consultation details",
+    });
+  }
+};
 
 export const handlePrescriptionFileUpload = async (
   req: Request,
@@ -180,29 +200,29 @@ export const handlePrescriptionFileUpload = async (
   const consultation = await prisma.consultation.findUnique({
     where: { id: req.query.consultationId as string },
   });
-  if (!consultation) {
+  if (!consultation || !req.file) {
     return res
       .status(400)
       .json({ status: Status.BAD_REQUEST, message: "Invalid consultation id" });
   }
 
-  // const bucket = process.env.SUPABASE_PRESCRIPTIONS_BUCKET ?? "misc";
   try {
-    // const filename = `${consultation.patientId}/prescription`;
-    // const { error } = await supabase.storage
-    //   .from(bucket)
-    //   .upload(filename, (req.file as Express.Multer.File).buffer, {
-    //     contentType: "application/pdf",
-    //     upsert: true,
-    //   });
-    // logger.error({ message: error, interactionId: req.headers.interactionId });
-    // const { data } = supabase.storage.from(bucket).getPublicUrl(filename);
+    const { key } = await uploadFile({
+      bucket: process.env.S3_BUCKET_NAME as string,
+      key: `prescriptions/${consultation.id}-${req.file.originalname}`,
+      body: req.file.buffer,
+      contentType: req.file.mimetype,
+    });
+    if (!key) {
+      throw new Error("File upload failed");
+    }
 
     const result = await prisma.consultation.update({
       where: { id: consultation.id },
       data: {
-        // prescriptionUrl: data.publicUrl,
+        prescriptionUrl: key,
       },
+      select: { id: true, prescriptionUrl: true },
     });
     return res.status(200).json({
       status: Status.SUCCESS,
@@ -236,6 +256,7 @@ export const updatePrescriptionContent = async (
       data: {
         prescriptionContent: getFormattedSpeechData(content) as string,
       },
+      select: { id: true, prescriptionContent: true, prescriptionUrl: true },
     });
     return res
       .status(200)
@@ -254,34 +275,26 @@ export const completeConsultation = async (
   res: Response
 ): Promise<any> => {
   try {
-    const data = await prisma.$transaction(
-      async (trx) => {
-        const consultation = await prisma.consultation.findUnique({
-          where: { id: req.params.id },
-        });
+    const data = await prisma.$transaction(async (trx) => {
+      const consultation = await trx.consultation.findUnique({
+        where: { id: req.params.id },
+      });
 
-        if (!consultation) {
-          return res
-            .status(404)
-            .json({ success: false, message: "Consultation not found." });
-        }
-
-        const appointment = await prisma.appointment.update({
-          where: { id: consultation.appointmentId },
-          data: {
-            status: "completed",
-          },
-        });
-        // await prisma.slot.delete({
-        //   where: { id: appointment.slotId },
-        // });
-      },
-      {
-        timeout: 10000, // 10 seconds
+      if (!consultation) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Consultation not found." });
       }
-    );
+
+      const appointment = await trx.appointment.update({
+        where: { id: consultation.appointmentId },
+        data: {
+          status: AppointmentStatus.COMPLETED,
+        },
+      });
+    });
     res.json({
-      success: true,
+      status: Status.SUCCESS,
       message: "Consultation completed",
       data,
     });
