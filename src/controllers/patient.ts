@@ -4,11 +4,10 @@ import { Status } from "../utils/status";
 import prisma from "../config/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import {
-  patientLoginSchema,
-  patientRegisterSchema,
-} from "../schemas/patient.schema";
+import { patientLoginSchema, patientRegisterSchema } from "../schemas/patient";
 import logger from "../utils/logger";
+import { issueAccessToken } from "../services/auth";
+import { UserRole } from "../utils/constants";
 
 export const handlePatientRegister = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,
@@ -92,23 +91,18 @@ export const handlePatientLogin = async (
         .status(404)
         .json({ status: Status.FAILED, message: "User not found" });
     }
-    const isPasswordValid = await bcrypt.compare(password, patient.password);
-    if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ status: Status.FAILED, message: "Invalid credentials" });
-    }
-    const token = jwt.sign(
-      { id: patient.id },
-      process.env.JWT_SECRET as string,
+    const token = await issueAccessToken(
       {
-        expiresIn: "1h",
-      }
+        id: patient.id,
+        passwordHash: patient.password,
+        role: UserRole.PATIENT,
+      },
+      password
     );
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Login successful",
-      data: { token, id: patient.id },
+      data: { token },
     });
   } catch (err) {
     return res.status(500).json({ status: Status.ERROR, message: err });

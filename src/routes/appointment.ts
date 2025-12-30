@@ -1,29 +1,110 @@
 import express from "express";
 import * as appointmentController from "../controllers/appointment";
-const router = express.Router();
+import { auth } from "../middleware/auth";
+import { ParamsDictionary } from "express-serve-static-core";
+import { ParsedQs } from "qs";
+const router: any = express.Router();
 
-router.get("/", (req, res) => {
-  void appointmentController.getAppointmentList(req, res);
-});
+router.get(
+  "/",
+  auth,
+  (
+    req: express.Request<
+      ParamsDictionary,
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    void appointmentController.getAppointmentList(req, res);
+  }
+);
 
-router.get("/:id", (req, res) => {
-  appointmentController.getAppointmentWithID(req, res);
-});
+router.get(
+  "/:id",
+  auth,
+  (
+    req: express.Request<
+      { id: string },
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    appointmentController.getAppointmentWithID(req, res);
+  }
+);
 
-router.get("/patient/:id", (req, res) => {
-  appointmentController.getPatientAppointmentList(req, res);
-});
+router.get(
+  "/patient/:id",
+  auth,
+  (
+    req: express.Request<
+      { id: string },
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    appointmentController.getPatientAppointmentList(req, res);
+  }
+);
 
-router.get("/doctor/:id", (req, res) => {
-  appointmentController.getDoctorAppointmentList(req, res);
-});
+router.get(
+  "/doctor/:id",
+  auth,
+  (
+    req: express.Request<
+      { id: string },
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    appointmentController.getDoctorAppointmentList(req, res);
+  }
+);
 
-router.post("/book", (req, res) => {
-  appointmentController.createAppointment(req, res);
-});
+router.post(
+  "/book",
+  auth,
+  (
+    req: express.Request<
+      ParamsDictionary,
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    appointmentController.createAppointment(req, res);
+  }
+);
 
-router.patch("/:id/cancel", (req, res) => {
-  appointmentController.cancelAppointment(req, res);
-});
+router.patch(
+  "/:id/cancel",
+  auth,
+  (
+    req: express.Request<
+      { id: string },
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    appointmentController.cancelAppointment(req, res);
+  }
+);
 
 export default router;

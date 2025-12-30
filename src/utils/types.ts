@@ -31,3 +31,11 @@ export type UploadInput = {
 export type UploadResult = {
   key: string;
 };
+
+export type UserRole = "DOCTOR" | "PATIENT";
+
+export type IssueTokenInput = {
+  id: string;
+  passwordHash: string;
+  role: UserRole;
+};

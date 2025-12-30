@@ -9,7 +9,7 @@ import {
   doctorLoginSchema,
   doctorRegisterSchema,
   doctorSignatureFileUpdateSchema,
-} from "../schemas/doctor.schema";
+} from "../schemas/doctor";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 import logger from "../utils/logger";
@@ -23,7 +23,8 @@ import {
   uploadFile,
 } from "../utils/helper";
 import { s3client } from "../config/storage";
-import { AppointmentStatus } from "../utils/constants";
+import { AppointmentStatus, UserRole } from "../utils/constants";
+import { issueAccessToken } from "../services/auth";
 
 export const getDoctorsList = async (
   _req: Request,
@@ -87,26 +88,16 @@ export const handleDoctorLogin = async (
       .status(404)
       .json({ status: Status.FAILED, message: "User not found" });
   }
-  const isPasswordValid = await bcrypt.compare(password, doctor.password);
-  if (!isPasswordValid) {
-    logger.warn({ message: "Invalid credentials" });
-    return res
-      .status(401)
-      .json({ status: Status.FAILED, message: "Invalid credentials" });
-  }
 
   try {
-    const token = jwt.sign(
-      { id: doctor.id },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "1h",
-      }
+    const token = await issueAccessToken(
+      { id: doctor.id, passwordHash: doctor.password, role: UserRole.DOCTOR },
+      password
     );
     return res.status(200).json({
       status: Status.SUCCESS,
       message: "Login successful",
-      data: { token, id: doctor.id, name: doctor.name },
+      data: { token },
     });
   } catch (err: any) {
     logger.error({
@@ -332,14 +323,14 @@ export const upsertAvailability = async (
     return res.status(400).json(result);
   }
   const { interval, weeklyAvailability } = req.body;
-  const doctorId = req.headers.id as string;
+  const { user } = req as any;
+  const doctorId = user.id;
 
   try {
     await prisma.availability.updateMany({
       where: { doctorId, effectiveTo: null },
       data: { effectiveTo: new Date() },
     });
-
     await Promise.all(
       weeklyAvailability.map(async (availability: any) => {
         return prisma.availability.create({

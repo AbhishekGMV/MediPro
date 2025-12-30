@@ -1,8 +1,8 @@
 // auth middleware
 import { type Request, type Response, type NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Status } from "../utils/status";
-import logger from "../utils/logger";
+import { UserRole } from "../utils/types";
 
 export const auth = (
   req: Request,
@@ -18,13 +18,22 @@ export const auth = (
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET ?? "");
-    const { id } = decoded as JwtPayload;
-    (req as any).user = { id };
-
+    (req as any).user = decoded;
     next();
   } catch (error) {
     return res
       .status(401)
       .json({ status: Status.ERROR, message: "Unauthorized access" });
   }
+};
+
+export const role = (...allowedRoles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!allowedRoles.includes((req as any).user.role)) {
+      return res
+        .status(403)
+        .json({ status: Status.ERROR, message: "Access denied" });
+    }
+    next();
+  };
 };

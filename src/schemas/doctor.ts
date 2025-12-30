@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { userSchema } from "./user.schema";
+import { userSchema } from "./user";
 
 export const doctorRegisterSchema = z.object({
   file: z

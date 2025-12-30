@@ -1,8 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { INTERACTION_ID } from "../utils/constants";
-import { getInteractionId, interactionStorage } from "../utils/logger";
-
-const { v4: uuidv4, validate: uuidValidate } = require("uuid");
+import { interactionStorage } from "../utils/logger";
+import { v4 as uuidv4 } from "uuid";
 
 export default function assignInteractionId(
   req: Request,

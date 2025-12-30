@@ -1,9 +1,10 @@
 import express from "express";
 import * as doctorController from "../controllers/doctor";
 import multer from "multer";
-import { auth } from "../middleware/auth";
+import { auth, role } from "../middleware/auth";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
+import { UserRole } from "../utils/constants";
 
 const router: any = express.Router();
 
@@ -13,6 +14,7 @@ const upload = multer({ storage });
 router.get(
   "/",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -30,6 +32,7 @@ router.get(
 router.get(
   "/:id",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -46,6 +49,8 @@ router.get(
 
 router.patch(
   "/:id",
+  auth,
+  role(UserRole.DOCTOR),
   upload.single("signature"),
   (
     req: express.Request<
@@ -64,6 +69,7 @@ router.patch(
 router.delete(
   "/:id",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -81,6 +87,7 @@ router.delete(
 router.post(
   "/get-doctor-with-role",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -130,6 +137,7 @@ router.post(
 router.post(
   "/:id/availability",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -147,6 +155,7 @@ router.post(
 router.post(
   "/:id/leave",
   auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -163,6 +172,8 @@ router.post(
 
 router.get(
   "/:id/slots",
+  auth,
+  role(UserRole.DOCTOR),
   (
     req: express.Request<
       ParamsDictionary,
@@ -177,8 +188,13 @@ router.get(
   }
 );
 
-router.get("/:id/signature", (req: any, res: any) => {
-  doctorController.getDoctorSignatureUrl(req, res);
-});
+router.get(
+  "/:id/signature",
+  auth,
+  role(UserRole.DOCTOR),
+  (req: any, res: any) => {
+    doctorController.getDoctorSignatureUrl(req, res);
+  }
+);
 
 export default router;

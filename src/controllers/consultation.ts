@@ -6,7 +6,7 @@ import {
   consultationMetaDataSchema,
   consultationSchema,
   prescriptionSchema,
-} from "../schemas/consultation.schema";
+} from "../schemas/consultation";
 import {
   getFormattedSpeechData,
   getPreSignedUrl,
@@ -132,7 +132,8 @@ export const createConsultationMetaData = async (
   req: Request,
   res: Response
 ) => {
-  const doctorId = req.headers.id as string;
+  const { user } = req as any;
+  const doctorId = user.id;
   const result = consultationMetaDataSchema.safeParse(req.body);
   if (!result.success) {
     return res

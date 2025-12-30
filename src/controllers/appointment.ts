@@ -3,7 +3,7 @@ import prisma from "../config/prisma";
 import { Status } from "../utils/status";
 import { Request, Response } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { AppointmentSchema } from "../schemas/appointment.schema";
+import { AppointmentSchema } from "../schemas/appointment";
 import { isSlotWithinAvailability } from "../utils/helper";
 import logger from "../utils/logger";
 import { AppointmentStatus } from "../utils/constants";

@@ -1,8 +1,9 @@
 import express from "express";
 
 import * as patientController from "../controllers/patient";
-import { auth } from "../middleware/auth";
+import { auth, role } from "../middleware/auth";
 import { Request, Response } from "express-serve-static-core";
+import { UserRole } from "../utils/constants";
 
 const router: any = express.Router();
 
@@ -14,9 +15,14 @@ router.put("/", auth, (req: Request, res: Response) => {
   patientController.updatePatientRegister(req, res);
 });
 
-router.get("/:id", auth, (req: Request, res: Response) => {
-  patientController.getPatientWithID(req, res);
-});
+router.get(
+  "/:id",
+  auth,
+  role(UserRole.PATIENT),
+  (req: Request, res: Response) => {
+    patientController.getPatientWithID(req, res);
+  }
+);
 
 router.post("/register", (req: Request, res: Response) => {
   patientController.handlePatientRegister(req, res);
