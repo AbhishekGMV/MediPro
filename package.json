@@ -40,6 +40,7 @@
   "description": "This is a web app which can be used by doctors to automatically generate prescriptions by voice and send them as an SMS or a PDF. This can also be used by patients to store their previous prescriptions.",
   "version": "1.0.0",
   "main": "dist/src/app.js",
+  "type": "module",
   "scripts": {
     "test": "vitest",
     "dev": "nodemon --exec ts-node --require ./src/utils/instrumentation.ts src/app.ts --import",
