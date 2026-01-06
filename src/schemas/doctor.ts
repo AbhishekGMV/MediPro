@@ -40,9 +40,6 @@ const DoctorSlotSchema = z.object({
 });
 
 export const DoctorAvailabilitySchema = z.object({
-  headers: z.object({
-    id: z.string(),
-  }),
   body: z.object({
     weeklyAvailability: z.array(DoctorSlotSchema).transform((arr) =>
       arr.map((val) => ({

@@ -2,10 +2,29 @@ import express from "express";
 
 import * as patientController from "../controllers/patient";
 import { auth, role } from "../middleware/auth";
-import { Request, Response } from "express-serve-static-core";
+import { ParamsDictionary, Request, Response } from "express-serve-static-core";
 import { UserRole } from "../utils/constants";
+import { ParsedQs } from "qs";
 
 const router: any = express.Router();
+
+router.get(
+  "/me",
+  auth,
+  role(UserRole.PATIENT),
+  (
+    req: express.Request<
+      ParamsDictionary,
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    void patientController.getPatient(req, res);
+  }
+);
 
 router.get("/", auth, (req: Request, res: Response) => {
   void patientController.getPatientsList(req, res);

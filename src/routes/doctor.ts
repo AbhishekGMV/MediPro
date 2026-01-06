@@ -14,7 +14,7 @@ const upload = multer({ storage });
 router.get(
   "/",
   auth,
-  role(UserRole.DOCTOR),
+  role(UserRole.DOCTOR, UserRole.PATIENT),
   (
     req: express.Request<
       ParamsDictionary,
@@ -30,7 +30,7 @@ router.get(
 );
 
 router.get(
-  "/:id",
+  "/me",
   auth,
   role(UserRole.DOCTOR),
   (
@@ -43,7 +43,7 @@ router.get(
     >,
     res: express.Response<any, Record<string, any>>
   ) => {
-    void doctorController.getDoctorWithID(req, res);
+    void doctorController.getDoctor(req, res);
   }
 );
 
@@ -134,8 +134,26 @@ router.post(
   }
 );
 
+router.get(
+  "/availability",
+  auth,
+  role(UserRole.DOCTOR),
+  (
+    req: express.Request<
+      ParamsDictionary,
+      any,
+      any,
+      ParsedQs,
+      Record<string, any>
+    >,
+    res: express.Response<any, Record<string, any>>
+  ) => {
+    doctorController.getAvailability(req, res);
+  }
+);
+
 router.post(
-  "/:id/availability",
+  "/availability",
   auth,
   role(UserRole.DOCTOR),
   (
@@ -173,7 +191,7 @@ router.post(
 router.get(
   "/:id/slots",
   auth,
-  role(UserRole.DOCTOR),
+  role(UserRole.DOCTOR, UserRole.PATIENT),
   (
     req: express.Request<
       ParamsDictionary,

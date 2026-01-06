@@ -9,8 +9,7 @@ export const auth = (
   res: Response,
   next: NextFunction
 ): Response<void> | undefined => {
-  const authHeader = req.header("Authorization");
-  const token = authHeader?.split(" ")[1];
+  const { token } = req.cookies;
   if (token == null) {
     return res
       .status(401)

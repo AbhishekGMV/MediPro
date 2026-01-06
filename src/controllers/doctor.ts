@@ -51,16 +51,26 @@ export const getDoctorsList = async (
   }
 };
 
-export const getDoctorWithID = async (
+export const getDoctor = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const id = req.params.id;
+  const id = (req as any).user.id;
 
-  const doctor = await prisma.doctor.findUnique({ where: { id } });
+  const doctor = await prisma.doctor.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      specialization: true,
+      imageUrl: true,
+      signatureUrl: true,
+    },
+  });
   return res.json({
     status: Status.SUCCESS,
-    data: { ...doctor, password: undefined },
+    data: { ...doctor },
   });
 };
 
@@ -94,11 +104,14 @@ export const handleDoctorLogin = async (
       { id: doctor.id, passwordHash: doctor.password, role: UserRole.DOCTOR },
       password
     );
-    return res.status(200).json({
-      status: Status.SUCCESS,
-      message: "Login successful",
-      data: { token },
-    });
+    return res
+      .cookie("token", token)
+      .status(200)
+      .json({
+        status: Status.SUCCESS,
+        message: "Login successful",
+        data: { token, id: doctor.id },
+      });
   } catch (err: any) {
     logger.error({
       message: "login failed",
@@ -106,7 +119,7 @@ export const handleDoctorLogin = async (
       description: err.message,
       stack: err.stack,
     });
-    return res.status(500).json({ status: Status.ERROR, message: err });
+    return res.status(401).json({ status: Status.ERROR, message: err.message });
   }
 };
 
@@ -262,7 +275,7 @@ export const deleteDoctorWithID = async (
     const response = await s3client.send(
       new DeleteObjectCommand({
         Bucket: process.env.SIGNATURES_BUCKET as string,
-        Key: `${doctor.id}_signature.png`,
+        Key: doctor.signatureUrl,
       })
     );
     if (response.$metadata.httpStatusCode !== 204) {
@@ -325,34 +338,60 @@ export const upsertAvailability = async (
   const { interval, weeklyAvailability } = req.body;
   const { user } = req as any;
   const doctorId = user.id;
-
   try {
-    await prisma.availability.updateMany({
-      where: { doctorId, effectiveTo: null },
-      data: { effectiveTo: new Date() },
+    await prisma.$transaction(async (trx) => {
+      await trx.availability.updateMany({
+        where: { doctorId, effectiveTo: null },
+        data: { effectiveTo: new Date() },
+      });
+      await Promise.all(
+        weeklyAvailability.map(async (availability: any) => {
+          return trx.availability.create({
+            data: {
+              doctorId,
+              dayOfWeek: availability.dayOfWeek,
+              startTime: timeToDate(availability.startTime),
+              endTime: timeToDate(availability.endTime),
+              effectiveFrom: new Date(),
+              effectiveTo: null,
+              slotDuration: interval,
+            },
+          });
+        })
+      );
     });
-    await Promise.all(
-      weeklyAvailability.map(async (availability: any) => {
-        return prisma.availability.create({
-          data: {
-            doctorId,
-            dayOfWeek: availability.dayOfWeek,
-            startTime: timeToDate(availability.startTime),
-            endTime: timeToDate(availability.endTime),
-            effectiveFrom: new Date(),
-            effectiveTo: null,
-            slotDuration: interval,
-          },
-        });
-      })
-    );
 
     logger.info({ message: "Availability updated successfully" });
     return res
       .status(200)
       .json({ status: Status.SUCCESS, message: "Availability updated" });
   } catch (err) {
+    console.log(err);
     logger.error({ message: "Failed to update availability", error: err });
+    return res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
+export const getAvailability = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const doctorId = (req as any).user.id as string;
+    const availabilities = await prisma.availability.findMany({
+      where: { doctorId, effectiveTo: null },
+      select: {
+        startTime: true,
+        endTime: true,
+        dayOfWeek: true,
+        id: true,
+      },
+    });
+    return res
+      .status(200)
+      .json({ status: Status.SUCCESS, data: availabilities });
+  } catch (err) {
+    console.log(err);
     return res.status(500).json({ status: Status.ERROR, message: err });
   }
 };
@@ -453,6 +492,7 @@ export const getAvailableSlots = async (
       },
     });
   } catch (err) {
+    console.log(err);
     logger.error({ message: "Failed to get slots", error: err });
     return res.status(500).json({
       status: Status.ERROR,

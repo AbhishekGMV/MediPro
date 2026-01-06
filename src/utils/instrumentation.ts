@@ -11,6 +11,8 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import { SimpleLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import dotenv from "dotenv";
+dotenv.config();
 
 const sdk = new NodeSDK({
   resource: resourceFromAttributes({

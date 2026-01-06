@@ -59,7 +59,6 @@ export const createAppointment = async (
   startTime = new Date(startTime);
   endTime = new Date(endTime);
   const dayOfWeek = startTime.getUTCDay();
-
   if (startTime >= endTime) {
     return res.status(400).json({
       status: Status.FAILED,
@@ -158,6 +157,7 @@ export const createAppointment = async (
       message: "Appointment created successfully",
     });
   } catch (err) {
+    console.error(err);
     logger.error({ message: "Failed to book appointment", error: err });
     return res
       .status(500)
@@ -271,7 +271,7 @@ export const getDoctorAppointmentList = async (
   req: Request<{ id: string }, any, any, ParsedQs, Record<string, any>>,
   res: Response<any, Record<string, any>, number>
 ): Promise<any> => {
-  const id = req.params.id;
+  const id = (req as any).user.id;
   const { date, status, patientId } = req.query;
   const filters: any = { doctorId: id };
 
@@ -304,6 +304,7 @@ export const getDoctorAppointmentList = async (
         status: true,
         patient: {
           select: {
+            id: true,
             name: true,
             age: true,
             gender: true,

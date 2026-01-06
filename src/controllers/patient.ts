@@ -99,13 +99,19 @@ export const handlePatientLogin = async (
       },
       password
     );
-    return res.status(200).json({
+    return res.cookie("token", token).status(200).json({
       status: Status.SUCCESS,
       message: "Login successful",
       data: { token },
     });
-  } catch (err) {
-    return res.status(500).json({ status: Status.ERROR, message: err });
+  } catch (err: any) {
+    logger.error({
+      message: "login failed",
+      error: err.name,
+      description: err.message,
+      stack: err.stack,
+    });
+    return res.status(401).json({ status: Status.ERROR, message: err.message });
   }
 };
 
@@ -133,6 +139,28 @@ export const getPatientsList = async (
  * @name getPatientWithID
  * @description Get patient details by id
  */
+export const getPatient = async (
+  req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
+  res: Response<any, Record<string, any>, number>
+): Promise<any> => {
+  const id = (req as any).user.id;
+  try {
+    const data = await prisma.patient.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    return res.json({
+      status: Status.SUCCESS,
+      data: { ...data },
+    });
+  } catch (err) {
+    res.status(500).json({ status: Status.ERROR, message: err });
+  }
+};
+
 export const getPatientWithID = async (
   req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
   res: Response<any, Record<string, any>, number>
