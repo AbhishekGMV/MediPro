@@ -1,12 +1,12 @@
 import moment from "moment";
-import prisma from "../config/prisma";
-import { Status } from "../utils/status";
+import prisma from "../config/prisma.js";
+import { Status } from "../utils/status.js";
 import { Request, Response } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { AppointmentSchema } from "../schemas/appointment";
-import { isSlotWithinAvailability } from "../utils/helper";
-import logger from "../utils/logger";
-import { AppointmentStatus } from "../utils/constants";
+import { AppointmentSchema } from "../schemas/appointment.js";
+import { isSlotWithinAvailability } from "../utils/helper.js";
+import logger from "../utils/logger.js";
+import { AppointmentStatus } from "../utils/constants.js";
 
 export const getAppointmentList = async (
   _req: Request<{}, any, any, ParsedQs, Record<string, any>>,

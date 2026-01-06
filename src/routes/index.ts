@@ -1,14 +1,14 @@
 import express from "express";
-import patientRouter from "./patient";
-import doctorRouter from "./doctor";
-import consultationRouter from "./consultation";
-import appointmentRouter from "./appointment";
-import { auth } from "../middleware/auth";
-import assignInteractionId from "../middleware/flow-control";
+import patientRouter from "./patient.js";
+import doctorRouter from "./doctor.js";
+import consultationRouter from "./consultation.js";
+import appointmentRouter from "./appointment.js";
+import { auth } from "../middleware/auth.js";
+import assignInteractionId from "../middleware/flow-control.js";
 import {
   logCaughtExceptionMiddleware,
   logRequestMiddleware,
-} from "../middleware/logger";
+} from "../middleware/logger.js";
 
 const router: any = express.Router();
 

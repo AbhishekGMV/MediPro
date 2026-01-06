@@ -1,10 +1,10 @@
 import express from "express";
-import * as doctorController from "../controllers/doctor";
+import * as doctorController from "../controllers/doctor.js";
 import multer from "multer";
-import { auth, role } from "../middleware/auth";
+import { auth, role } from "../middleware/auth.js";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { UserRole } from "../utils/constants";
+import { UserRole } from "../utils/constants.js";
 
 const router: any = express.Router();
 

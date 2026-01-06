@@ -1,6 +1,6 @@
 import express from "express";
-import * as appointmentController from "../controllers/appointment";
-import { auth } from "../middleware/auth";
+import * as appointmentController from "../controllers/appointment.js";
+import { auth } from "../middleware/auth.js";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 const router: any = express.Router();

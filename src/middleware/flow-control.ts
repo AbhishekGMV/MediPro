@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { INTERACTION_ID } from "../utils/constants";
-import { interactionStorage } from "../utils/logger";
+import { INTERACTION_ID } from "../utils/constants.js";
+import { interactionStorage } from "../utils/logger.js";
 import { v4 as uuidv4 } from "uuid";
 
 export default function assignInteractionId(

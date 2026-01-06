@@ -1,13 +1,15 @@
 import { Request, ParamsDictionary, Response } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { Status } from "../utils/status";
-import prisma from "../config/prisma";
+import { Status } from "../utils/status.js";
+import prisma from "../config/prisma.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { patientLoginSchema, patientRegisterSchema } from "../schemas/patient";
-import logger from "../utils/logger";
-import { issueAccessToken } from "../services/auth";
-import { UserRole } from "../utils/constants";
+import {
+  patientLoginSchema,
+  patientRegisterSchema,
+} from "../schemas/patient.js";
+import logger from "../utils/logger.js";
+import { issueAccessToken } from "../services/auth.js";
+import { UserRole } from "../utils/constants.js";
 
 export const handlePatientRegister = async (
   req: Request<{}, any, any, ParsedQs, Record<string, any>>,

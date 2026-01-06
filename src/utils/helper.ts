@@ -1,6 +1,6 @@
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3client } from "../config/storage";
-import { Slot, UploadInput, UploadResult } from "./types";
+import { s3client } from "../config/storage.js";
+import { Slot, UploadInput, UploadResult } from "./types.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export function generateSlots(availability: Slot, interval: number) {

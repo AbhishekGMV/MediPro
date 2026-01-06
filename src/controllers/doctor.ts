@@ -1,18 +1,17 @@
-import prisma from "../config/prisma";
+import prisma from "../config/prisma.js";
 import { type Request, type Response } from "express";
-import { Status } from "../utils/status";
+import { Status } from "../utils/status.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import {
   DoctorAvailabilitySchema,
   DoctorLeaveSchema,
   doctorLoginSchema,
   doctorRegisterSchema,
   doctorSignatureFileUpdateSchema,
-} from "../schemas/doctor";
+} from "../schemas/doctor.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-import logger from "../utils/logger";
+import logger from "../utils/logger.js";
 import moment from "moment";
 import {
   generateSlots,
@@ -21,10 +20,10 @@ import {
   timeParts,
   timeToDate,
   uploadFile,
-} from "../utils/helper";
-import { s3client } from "../config/storage";
-import { AppointmentStatus, UserRole } from "../utils/constants";
-import { issueAccessToken } from "../services/auth";
+} from "../utils/helper.js";
+import { s3client } from "../config/storage.js";
+import { AppointmentStatus, UserRole } from "../utils/constants.js";
+import { issueAccessToken } from "../services/auth.js";
 
 export const getDoctorsList = async (
   _req: Request,

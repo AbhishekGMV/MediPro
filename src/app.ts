@@ -4,8 +4,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-import logger from "./utils/logger";
-import router from "./routes";
+import logger from "./utils/logger.js";
+import router from "./routes/index.js";
+import "./utils/instrumentation.js";
 
 dotenv.config();
 const app = express();

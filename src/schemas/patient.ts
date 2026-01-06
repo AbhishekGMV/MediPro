@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { userSchema } from "./user";
+import { userSchema } from "./user.js";
 
 export const patientRegisterSchema = z.object({
   body: z.object({

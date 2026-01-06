@@ -1,9 +1,9 @@
 import express from "express";
 
-import * as patientController from "../controllers/patient";
-import { auth, role } from "../middleware/auth";
+import * as patientController from "../controllers/patient.js";
+import { auth, role } from "../middleware/auth.js";
 import { ParamsDictionary, Request, Response } from "express-serve-static-core";
-import { UserRole } from "../utils/constants";
+import { UserRole } from "../utils/constants.js";
 import { ParsedQs } from "qs";
 
 const router: any = express.Router();

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { IssueTokenInput } from "../utils/types";
+import { IssueTokenInput } from "../utils/types.js";
 
 export async function issueAccessToken(
   input: IssueTokenInput,

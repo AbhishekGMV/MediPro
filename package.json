@@ -43,7 +43,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest",
-    "dev": "nodemon --exec ts-node --require ./src/utils/instrumentation.ts src/app.ts --import",
+    "dev": "node --loader ts-node/esm src/app.ts",
     "start": "node dist/src/app.js",
     "build": "prisma generate && tsc -p .",
     "vercel-build": "prisma generate",

@@ -1,18 +1,18 @@
-import { Status } from "../utils/status";
-import prisma from "../config/prisma";
+import { Status } from "../utils/status.js";
+import prisma from "../config/prisma.js";
 import { Request, Response } from "express";
-import logger from "../utils/logger";
+import logger from "../utils/logger.js";
 import {
   consultationMetaDataSchema,
   consultationSchema,
   prescriptionSchema,
-} from "../schemas/consultation";
+} from "../schemas/consultation.js";
 import {
   getFormattedSpeechData,
   getPreSignedUrl,
   uploadFile,
-} from "../utils/helper";
-import { AppointmentStatus } from "../utils/constants";
+} from "../utils/helper.js";
+import { AppointmentStatus } from "../utils/constants.js";
 
 export const getConsultationList = async (
   req: any,

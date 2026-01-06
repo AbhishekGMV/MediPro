@@ -1,7 +1,7 @@
 import express from "express";
-import * as consultationController from "../controllers/consultation";
+import * as consultationController from "../controllers/consultation.js";
 import multer from "multer";
-import { auth } from "../middleware/auth";
+import { auth } from "../middleware/auth.js";
 const router: any = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
