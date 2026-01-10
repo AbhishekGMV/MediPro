@@ -104,7 +104,11 @@ export const handleDoctorLogin = async (
       password
     );
     return res
-      .cookie("token", token)
+      .cookie("token", token, {
+        secure: true,
+        sameSite: "none",
+        path: "/",
+      })
       .status(200)
       .json({
         status: Status.SUCCESS,
