@@ -101,13 +101,18 @@ export const handlePatientLogin = async (
       },
       password
     );
-    return res.cookie("token", token, {
-      
-    }).status(200).json({
-      status: Status.SUCCESS,
-      message: "Login successful",
-      data: { token },
-    });
+    return res
+      .cookie("token", token, {
+        secure: true,
+        sameSite: "none",
+        path: "/",
+      })
+      .status(200)
+      .json({
+        status: Status.SUCCESS,
+        message: "Login successful",
+        data: { token },
+      });
   } catch (err: any) {
     logger.error({
       message: "login failed",
